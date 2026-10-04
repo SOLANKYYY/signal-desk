@@ -1,0 +1,78 @@
+{
+  "measuredAt": "2026-09-30 04:27:12.619730+00:00",
+  "nearLimitThresholdPct": 80,
+  "collections": [
+    {
+      "count": 341,
+      "averageBytes": 148.92375366568916,
+      "minBytes": 134,
+      "maxBytes": 184,
+      "totalBytes": 50783,
+      "approachingLimit": 0,
+      "collection": "sources",
+      "limitBytes": 16777216,
+      "maximumPctOfLimit": 0.0010967254638671875,
+      "allBelowLimit": true
+    },
+    {
+      "count": 470,
+      "averageBytes": 845.0148936170212,
+      "minBytes": 631,
+      "maxBytes": 990,
+      "totalBytes": 397157,
+      "approachingLimit": 0,
+      "collection": "reports",
+      "limitBytes": 16777216,
+      "maximumPctOfLimit": 0.005900859832763672,
+      "allBelowLimit": true
+    },
+    {
+      "count": 5,
+      "averageBytes": 104.6,
+      "minBytes": 102,
+      "maxBytes": 107,
+      "totalBytes": 523,
+      "approachingLimit": 0,
+      "collection": "indicators",
+      "limitBytes": 16777216,
+      "maximumPctOfLimit": 0.0006377696990966797,
+      "allBelowLimit": true
+    },
+    {
+      "count": 5,
+      "averageBytes": 162.0,
+      "minBytes": 162,
+      "maxBytes": 162,
+      "totalBytes": 810,
+      "approachingLimit": 0,
+      "collection": "observations",
+      "limitBytes": 16777216,
+      "maximumPctOfLimit": 0.0009655952453613281,
+      "allBelowLimit": true
+    },
+    {
+      "count": 470,
+      "averageBytes": 982.7127659574468,
+      "minBytes": 782,
+      "maxBytes": 1128,
+      "totalBytes": 461875,
+      "approachingLimit": 0,
+      "collection": "reports_embedded",
+      "limitBytes": 16777216,
+      "maximumPctOfLimit": 0.0067234039306640625,
+      "allBelowLimit": true
+    },
+    {
+      "count": 100000,
+      "averageBytes": 2048.0,
+      "minBytes": 2048,
+      "maxBytes": 2048,
+      "totalBytes": 204800000,
+      "approachingLimit": 0,
+      "collection": "working_set",
+      "limitBytes": 16777216,
+      "maximumPctOfLimit": 0.01220703125,
+      "allBelowLimit": true
+    }
+  ]
+}

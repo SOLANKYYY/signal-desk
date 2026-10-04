@@ -1,0 +1,13 @@
+services:
+  mongo:
+    image: mongo:8.0
+    command: ["mongod", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.3"]
+    ports: ["127.0.0.1:27017:27017"]
+    volumes: ["cti_mongo:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  cti_mongo:

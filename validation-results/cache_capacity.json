@@ -1,0 +1,18 @@
+{
+  "bytes": 224331838,
+  "maximumBytes": 321912832,
+  "pagesRequested": 10158,
+  "pagesRead": 3905,
+  "dirtyBytes": 141838,
+  "applicationEvictions": null,
+  "at": "2026-09-30T04:27:12.326326+00:00",
+  "uptime": 2012,
+  "occupancyPct": 69.68713754163115,
+  "collectionCount": 100000,
+  "logicalBytes": 204800000,
+  "onDiskBytes": 212525056,
+  "indexBytesOnDisk": 1110016,
+  "lowerOrderFootprintEstimateBytes": 205910016,
+  "footprintToCachePct": 63.9645256514658,
+  "note": "Occupancy is instance-wide. Logical data plus on-disk indexes is a rough planning estimate, not measured resident percentage of this collection."
+}

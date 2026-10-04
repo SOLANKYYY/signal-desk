@@ -1,0 +1,14 @@
+﻿.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.vercel/
+node_modules/
+*.log
+*.zip
+results/*
+!results/.gitkeep
+data/pdf-cache/

@@ -1,0 +1,189 @@
+{
+  "createdAt": "2026-09-30 04:22:29.671776+00:00",
+  "count": 470,
+  "referencedExplain": {
+    "explainVersion": "1",
+    "stages": [
+      {
+        "$cursor": {
+          "queryPlanner": {
+            "namespace": "signal_desk.reports",
+            "parsedQuery": {
+              "_id": {
+                "$eq": "d615006c0198e1560a43d09a"
+              }
+            },
+            "indexFilterSet": false,
+            "queryHash": "9B5DE45B",
+            "planCacheShapeHash": "9B5DE45B",
+            "planCacheKey": "B4738D99",
+            "optimizationTimeMillis": 0,
+            "maxIndexedOrSolutionsReached": false,
+            "maxIndexedAndSolutionsReached": false,
+            "maxScansToExplodeReached": false,
+            "prunedSimilarIndexes": false,
+            "winningPlan": {
+              "isCached": false,
+              "stage": "EXPRESS_IXSCAN",
+              "keyPattern": "{ _id: 1 }",
+              "indexName": "_id_"
+            },
+            "rejectedPlans": []
+          },
+          "executionStats": {
+            "executionSuccess": true,
+            "nReturned": 1,
+            "executionTimeMillis": 0,
+            "totalKeysExamined": 1,
+            "totalDocsExamined": 1,
+            "executionStages": {
+              "isCached": false,
+              "stage": "EXPRESS_IXSCAN",
+              "keyPattern": "{ _id: 1 }",
+              "indexName": "_id_",
+              "keysExamined": 1,
+              "docsExamined": 1,
+              "nReturned": 1
+            }
+          }
+        },
+        "nReturned": 1,
+        "executionTimeMillisEstimate": 0
+      },
+      {
+        "$lookup": {
+          "from": "sources",
+          "as": "source",
+          "localField": "sourceId",
+          "foreignField": "_id"
+        },
+        "totalDocsExamined": 1,
+        "totalKeysExamined": 1,
+        "collectionScans": 0,
+        "indexesUsed": [
+          "_id_"
+        ],
+        "nReturned": 1,
+        "executionTimeMillisEstimate": 0
+      }
+    ],
+    "queryShapeHash": "8CBC109D4E06446A6C4EC2C5D85BA8F52C5235A8B09BBB272F122A5B0330EA36",
+    "serverInfo": {
+      "host": "a9fc49797a07",
+      "port": 27017,
+      "version": "8.0.12",
+      "gitVersion": "b60fc6875b5fb4b63cc0dbbd8dda0d6d6277921a"
+    },
+    "serverParameters": {
+      "internalQueryFacetBufferSizeBytes": 104857600,
+      "internalQueryFacetMaxOutputDocSizeBytes": 104857600,
+      "internalLookupStageIntermediateDocumentMaxSizeBytes": 104857600,
+      "internalDocumentSourceGroupMaxMemoryBytes": 104857600,
+      "internalQueryMaxBlockingSortMemoryUsageBytes": 104857600,
+      "internalQueryProhibitBlockingMergeOnMongoS": 0,
+      "internalQueryMaxAddToSetBytes": 104857600,
+      "internalDocumentSourceSetWindowFieldsMaxMemoryBytes": 104857600,
+      "internalQueryFrameworkControl": "trySbeRestricted",
+      "internalQueryPlannerIgnoreIndexWithCollationForRegex": 1
+    },
+    "command": {
+      "aggregate": "reports",
+      "pipeline": [
+        {
+          "$match": {
+            "_id": "d615006c0198e1560a43d09a"
+          }
+        },
+        {
+          "$lookup": {
+            "from": "sources",
+            "localField": "sourceId",
+            "foreignField": "_id",
+            "as": "source"
+          }
+        }
+      ],
+      "cursor": {},
+      "$db": "signal_desk"
+    },
+    "ok": 1.0
+  },
+  "embeddedExplain": {
+    "explainVersion": "1",
+    "queryPlanner": {
+      "namespace": "signal_desk.reports_embedded",
+      "parsedQuery": {
+        "_id": {
+          "$eq": "d615006c0198e1560a43d09a"
+        }
+      },
+      "indexFilterSet": false,
+      "queryHash": "9B5DE45B",
+      "planCacheShapeHash": "9B5DE45B",
+      "planCacheKey": "B4738D99",
+      "optimizationTimeMillis": 0,
+      "optimizedPipeline": true,
+      "maxIndexedOrSolutionsReached": false,
+      "maxIndexedAndSolutionsReached": false,
+      "maxScansToExplodeReached": false,
+      "prunedSimilarIndexes": false,
+      "winningPlan": {
+        "isCached": false,
+        "stage": "EXPRESS_IXSCAN",
+        "keyPattern": "{ _id: 1 }",
+        "indexName": "_id_"
+      },
+      "rejectedPlans": []
+    },
+    "executionStats": {
+      "executionSuccess": true,
+      "nReturned": 1,
+      "executionTimeMillis": 0,
+      "totalKeysExamined": 1,
+      "totalDocsExamined": 1,
+      "executionStages": {
+        "isCached": false,
+        "stage": "EXPRESS_IXSCAN",
+        "keyPattern": "{ _id: 1 }",
+        "indexName": "_id_",
+        "keysExamined": 1,
+        "docsExamined": 1,
+        "nReturned": 1
+      }
+    },
+    "queryShapeHash": "EFDF2C9A31444297002B74C8FC11B509F9D2A8BB920F14E84C1E66F4835E515E",
+    "command": {
+      "aggregate": "reports_embedded",
+      "pipeline": [
+        {
+          "$match": {
+            "_id": "d615006c0198e1560a43d09a"
+          }
+        }
+      ],
+      "cursor": {},
+      "$db": "signal_desk"
+    },
+    "serverInfo": {
+      "host": "a9fc49797a07",
+      "port": 27017,
+      "version": "8.0.12",
+      "gitVersion": "b60fc6875b5fb4b63cc0dbbd8dda0d6d6277921a"
+    },
+    "serverParameters": {
+      "internalQueryFacetBufferSizeBytes": 104857600,
+      "internalQueryFacetMaxOutputDocSizeBytes": 104857600,
+      "internalLookupStageIntermediateDocumentMaxSizeBytes": 104857600,
+      "internalDocumentSourceGroupMaxMemoryBytes": 104857600,
+      "internalQueryMaxBlockingSortMemoryUsageBytes": 104857600,
+      "internalQueryProhibitBlockingMergeOnMongoS": 0,
+      "internalQueryMaxAddToSetBytes": 104857600,
+      "internalDocumentSourceSetWindowFieldsMaxMemoryBytes": 104857600,
+      "internalQueryFrameworkControl": "trySbeRestricted",
+      "internalQueryPlannerIgnoreIndexWithCollationForRegex": 1
+    },
+    "ok": 1.0
+  },
+  "interpretation": "Embedded report detail avoids a source lookup. Source corrections require updating every embedded copy; snapshot can become stale. Explain timings are observations, not guaranteed speedups.",
+  "note": "Historical plan snapshot. Displayed namespace labels have been updated to match the current project name; measured statistics are unchanged."
+}

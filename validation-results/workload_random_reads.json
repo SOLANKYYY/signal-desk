@@ -1,0 +1,83 @@
+{
+  "measuredAt": "2026-09-30 04:22:43.187988+00:00",
+  "passes": [
+    {
+      "pass": 1,
+      "documentsRead": 100000,
+      "fullCollectionPass": true,
+      "seconds": 0.8534329579999849,
+      "documentsPerSecond": 117173.82023111623,
+      "batchSize": 200,
+      "medianBatchMs": 1.6151854999861825,
+      "p95BatchMs": 2.0527310000488797,
+      "paddingBytesConsumed": 181790396,
+      "cache": {
+        "bytes": 227147664,
+        "maximumBytes": 321912832,
+        "pagesRequested": 422736,
+        "pagesRead": 1891,
+        "dirtyBytes": 5998856,
+        "applicationEvictions": null,
+        "at": "2026-09-30T04:22:41.477323+00:00",
+        "uptime": 12537,
+        "occupancyPct": 70.56185445878715,
+        "hitRatioPct": 99.98663177216427,
+        "pagesRequestedDelta": 194491,
+        "pagesReadDelta": 26,
+        "reason": null
+      }
+    },
+    {
+      "pass": 2,
+      "documentsRead": 100000,
+      "fullCollectionPass": true,
+      "seconds": 0.8112774340002034,
+      "documentsPerSecond": 123262.39558633519,
+      "batchSize": 200,
+      "medianBatchMs": 1.5718610000021727,
+      "p95BatchMs": 1.8828400000074907,
+      "paddingBytesConsumed": 181790396,
+      "cache": {
+        "bytes": 227147664,
+        "maximumBytes": 321912832,
+        "pagesRequested": 618711,
+        "pagesRead": 1891,
+        "dirtyBytes": 5998856,
+        "applicationEvictions": null,
+        "at": "2026-09-30T04:22:42.317960+00:00",
+        "uptime": 13378,
+        "occupancyPct": 70.56185445878715,
+        "hitRatioPct": 100.0,
+        "pagesRequestedDelta": 195975,
+        "pagesReadDelta": 0,
+        "reason": null
+      }
+    },
+    {
+      "pass": 3,
+      "documentsRead": 100000,
+      "fullCollectionPass": true,
+      "seconds": 0.8399431139998796,
+      "documentsPerSecond": 119055.68166847824,
+      "batchSize": 200,
+      "medianBatchMs": 1.6145235000522007,
+      "p95BatchMs": 1.996758000132104,
+      "paddingBytesConsumed": 181790396,
+      "cache": {
+        "bytes": 227147664,
+        "maximumBytes": 321912832,
+        "pagesRequested": 814594,
+        "pagesRead": 1891,
+        "dirtyBytes": 5998856,
+        "applicationEvictions": null,
+        "at": "2026-09-30T04:22:43.187821+00:00",
+        "uptime": 14246,
+        "occupancyPct": 70.56185445878715,
+        "hitRatioPct": 100.0,
+        "pagesRequestedDelta": 195883,
+        "pagesReadDelta": 0,
+        "reason": null
+      }
+    }
+  ]
+}
