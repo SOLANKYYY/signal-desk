@@ -1,4 +1,4 @@
-﻿.venv/
+.venv/
 venv/
 __pycache__/
 *.pyc
@@ -12,3 +12,4 @@ node_modules/
 results/*
 !results/.gitkeep
 data/pdf-cache/
+public/

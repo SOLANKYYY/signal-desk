@@ -1,5 +1,5 @@
 """Actual MongoDB measurements. No simulated cache telemetry."""
-import argparse, json, random, statistics, time
+import argparse, json, random, statistics, time, os
 from bson import BSON
 from .db import db, client, ROOT, indexes
 from .core import now, cache_sample, cache_delta
@@ -8,6 +8,9 @@ LIMIT=16*1024*1024
 COLLECTIONS=('sources','reports','indicators','observations','evidence_passages','reports_embedded','working_set')
 
 def save(name,value):
+    if os.getenv('VERCEL')=='1':
+        db.lab_results.replace_one({'_id':name},{'_id':name,'value':value},upsert=True)
+        return name
     folder=ROOT/'results';folder.mkdir(exist_ok=True)
     path=folder/name;temporary=path.with_suffix(path.suffix+'.tmp')
     temporary.write_text(json.dumps(value,default=str,indent=2),encoding='utf-8');temporary.replace(path);return path

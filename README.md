@@ -1,6 +1,8 @@
 # Signal Desk
 
-A local Cyber Threat Intelligence workspace for report investigation, PDF evidence, analyst review, schema analysis, and cache measurement. It includes a browser frontend, Python API, MongoDB, real BSON dump, repeatable lab commands, and written answers.
+A Cyber Threat Intelligence workspace for report investigation, PDF evidence, analyst review, schema analysis, and cache measurement. It includes a browser frontend, Python API, MongoDB, real BSON dump, repeatable lab commands, and written answers.
+
+**Deploy to Vercel:** follow `docs/VERCEL_DEPLOYMENT.md`. This package includes the Flask entrypoint, durable PDF queue, password gate, and hosted MongoDB support. Cloud setup and production verification are still required. Cache monitoring and large database workloads remain local.
 
 **Start here:** run the application below, then follow `docs/USER_GUIDE.md`. The full academic explanation is in `docs/TECHNICAL_GUIDE.md`.
 
@@ -23,11 +25,11 @@ A local Cyber Threat Intelligence workspace for report investigation, PDF eviden
 - Independent polling for new annual-report and publicly available CTI/feed entries.
 - A restorable BSON dump plus checksums, unit tests and validation notes.
 
-The interface's cache values come from your MongoDB instance. No cache telemetry or threat-confirmation score is fabricated. It is a local coursework app; authentication and public deployment are outside this project.
+The interface's cache values come from your MongoDB instance. No cache telemetry or threat-confirmation score is fabricated. The Vercel version requires a website password and hosted MongoDB; the local version should stay on your own machine.
 
 ## Requirements
 
-- Python **3.10 or later** with pip.
+- Python **3.12 or later** with pip.
 - **MongoDB Community 7/8** running locally, or Docker Desktop if you choose the bundled container.
 - Internet for the initial Python/MongoDB downloads and optional live metadata updates. The bundled catalog works offline after setup.
 - About 1 GB of free storage and enough RAM for Python plus MongoDB. Generation may take tens of seconds or longer depending on the machine.

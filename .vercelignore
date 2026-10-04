@@ -1,0 +1,13 @@
+.venv
+venv
+.git
+.env
+.env.*
+__pycache__
+**/__pycache__
+*.zip
+data/dump
+docs
+results
+validation-results
+tests

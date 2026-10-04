@@ -26,3 +26,5 @@ def indexes():
 
     db.reports.create_index([('triage.alert',1),('triage.rank',-1)])
     db.reports.create_index('processing.status')
+
+    db.cloud_deliveries.create_index('at',expireAfterSeconds=604800)

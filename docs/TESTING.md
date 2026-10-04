@@ -61,3 +61,11 @@ With only `requirements.txt`, the 12 core/PDF tests run and the five mock HTTP t
 The application itself still requires real MongoDB. It never substitutes mock storage or test alerts. Automatic processing begins with the user's actual catalog when the server starts. The package contains no precomputed claims that all catalog PDFs were reviewed.
 
 - Live-source end-to-end check: the automatic processor downloaded the existing catalog's Beazley Security Q1 2026 PDF, extracted all 25 pages into 70 passages, and generated a provisional critical report-attention alert with six supporting rule excerpts. The queue reached zero remaining items in this one-report test. The PDF source was live; storage was disposable and mocked. This is not a claim that a current attack occurred or that the full catalog was processed.
+
+
+## Vercel adapter validation
+
+- All **35 Python tests passed**. Ten cloud tests cover fail-closed password authentication, cross-origin write rejection, existing read/review API compatibility, durable queue state, pause generation invalidation, completed-step deduplication, idle-queue avoidance, stored job results, expired-job recovery/late-delivery rejection, cron authentication, and MongoDB result storage.
+- Cloud tests use disposable mongomock storage and a mocked queue publisher. They do not validate Atlas connectivity or actual Vercel delivery.
+- Local and cloud in-memory DOM checks passed, including cloud connection wording, disabled local workload/cache controls, and background-processing guidance. JavaScript syntax and Python compilation checks passed.
+- Live Vercel deployment/build, Queue beta availability and real Atlas permissions must still be verified in the account owner’s deployment. This package does not claim an already deployed website.

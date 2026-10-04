@@ -37,3 +37,8 @@ See `TESTING.md` for the exact checks and environment limitations. Old screensho
 Added the missing automatic review workflow: a persistent sequential PDF queue, background text-based triage, default alerts dashboard, five threat-level counters, severity filtering, supporting source excerpts/page numbers, and alert acknowledgement/reopening. Start/resume, pause and retry controls show download progress and failures. Saved analyst decisions are retained separately. Fictional and metadata-only reports do not receive invented alerts or scores.
 
 This supersedes the earlier manual-only PDF indexing workflow; individual indexing is still available. The existing source/API setup is retained. Processing runs on the user's machine while the server is running; the package does not claim all publications have already been downloaded or reviewed.
+
+
+## Vercel deployment update
+
+Added a Flask web entrypoint and Vercel configuration, Python Queue subscriber for durable sequential report processing, daily discovery cron, hosted MongoDB persistence for jobs/results, and password protection. Expired jobs become retryable; delayed deliveries of expired jobs are ignored. Cloud wording and disabled local workload controls explain what is available. Existing sources, threat rules, analyst reviews, and local startup remain intact. See VERCEL_DEPLOYMENT.md for the GitHub/Atlas/Vercel setup. Live deployment has not been performed from this workspace.
