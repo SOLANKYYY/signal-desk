@@ -1,218 +1,187 @@
 # Signal Desk
 
-A Cyber Threat Intelligence workspace for report investigation, PDF evidence, analyst review, schema analysis, and cache measurement. It includes a browser frontend, Python API, MongoDB, real BSON dump, repeatable lab commands, and written answers.
+**A cyber threat intelligence workspace for investigating security reports, searching PDF evidence, and recording analyst decisions.**
 
-**Deploy to Vercel:** follow `docs/VERCEL_DEPLOYMENT.md`. This package includes the Flask entrypoint, durable PDF queue, password gate, and hosted MongoDB support. Cloud setup and production verification are still required. Cache monitoring and large database workloads remain local.
+Signal Desk brings public report metadata, extracted passages, provisional threat ratings, and review history into one browser interface. It uses Python and MongoDB, with a lightweight HTML, CSS, and JavaScript frontend.
 
-**Start here:** run the application below, then follow `docs/USER_GUIDE.md`. The full academic explanation is in `docs/TECHNICAL_GUIDE.md`.
+[Features](#features) · [Quick start](#quick-start) · [Technology](#technology) · [Deployment](#deployment) · [Contributing](CONTRIBUTING.md)
 
-## What is included
+## Features
 
-- Automatic PDF processing queue with persistent progress, pause/resume and failed-download retry.
-- Alerts dashboard with critical/high/medium/low/not-assessed counts and source excerpts.
-- Search titles, summaries, URLs, CVEs, analyst labels, linked indicators, and indexed PDF passages.
-- Publisher, publication-date, annual-report year, category, type, verdict and sorting controls.
-- Threat/CVE profiles with related reports and page-numbered PDF evidence.
-- Automatic sequential PDF indexing from the existing annual-report repository; optional single-report indexing remains available.
-- Dark/light themes, source health, recent review history and current-page JSON export.
-- Report provenance, linked indicators and evidence-based manual classification.
-- 465 real annual-report *metadata references* from the original repository.
-- Five clearly marked fictional CTI scenarios using reserved `.invalid` domains.
-- Referenced publisher/indicator relationships and bounded embedded report metadata.
-- `$bsonSize` analysis, 16 MiB limit checks, and a runnable embedded-source alternative.
-- Exactly 100,000 synthetic workload documents, each exactly 2,048 BSON bytes.
-- Real `serverStatus` counters, 10-second cache sampling and 3 randomized full read passes.
-- Independent polling for new annual-report and publicly available CTI/feed entries.
-- A restorable BSON dump plus checksums, unit tests and validation notes.
+- **Intelligence catalog:** search reports, summaries, CVEs, indicators, analyst labels, and indexed PDF passages. Filter by publisher, date, year, report type, category, and verdict.
+- **PDF processing:** sequential download and text extraction with persistent progress, pause/resume, and explicit retry for failed publications.
+- **Evidence search:** inspect matching passages, page references, related reports, and entity/CVE profiles.
+- **Threat attention levels:** Critical, High, Medium, Low, and Not assessed, with supporting rule excerpts. High and critical ratings create alerts that analysts can acknowledge or reopen.
+- **Analyst review:** save a category, verdict, and reasoning note, with recent review history retained separately from automatic ratings.
+- **Source visibility:** inspect provenance, linked indicators, source status, and update outcomes.
+- **Usable interface:** dark/light themes and JSON export of the current results page.
+- **Database analysis:** inspect BSON sizes and compare a referenced model with an embedded-source alternative. Local tools also provide synthetic workloads and real WiredTiger cache measurements.
 
-The interface's cache values come from your MongoDB instance. No cache telemetry or threat-confirmation score is fabricated. The Vercel version requires a website password and hosted MongoDB; the local version should stay on your own machine.
+### How to interpret ratings
 
-## Requirements
+Ratings are transparent, rule-based indicators of the attention a report's text may deserve. They are **not confirmed incident severity, CVSS scores, machine-learning predictions, or evidence that your device is affected**. A low rating does not establish safety.
 
-- Python **3.12 or later** with pip.
-- **MongoDB Community 7/8** running locally, or Docker Desktop if you choose the bundled container.
-- Internet for the initial Python/MongoDB downloads and optional live metadata updates. The bundled catalog works offline after setup.
-- About 1 GB of free storage and enough RAM for Python plus MongoDB. Generation may take tens of seconds or longer depending on the machine.
+Annual-report metadata alone remains **Not assessed**. Blocked, scanned, oversized, or unreadable PDFs may also remain unassessed. Clearly marked fictional scenarios are excluded from automatic alerts. Analyst verdicts and alert acknowledgements remain separate decisions.
 
-No Node.js, frontend build command, new API key or paid service is required. This update keeps the existing API/data-source setup; it does not add the comparison website’s feed providers or VirusTotal.
+## Technology
 
-## Run on Windows (PowerShell)
+| Area | Tools | Purpose |
+| --- | --- | --- |
+| Browser interface | HTML5, CSS3, JavaScript | Dashboard, filters, report views, and review controls |
+| Application | Python 3.12+, Flask | Cloud HTTP application and processing logic |
+| Local server | Python standard library | Local HTTP service and background processing |
+| Database | MongoDB, PyMongo | Reports, relationships, evidence, reviews, and processing state |
+| Connection support | dnspython | DNS support for MongoDB SRV connections |
+| PDF extraction | pypdf | Extract searchable text and page references |
+| Cloud execution | Vercel, Vercel Queues | Hosted application and queued processing |
+| Hosted database | MongoDB Atlas | MongoDB hosting for cloud deployment |
+| Testing | unittest, mongomock | Automated checks with isolated mock storage where appropriate |
+| Optional local database | Docker Compose | Start the bundled MongoDB service |
 
-Unzip the project. Open PowerShell **inside the `signal-desk` folder**, where `requirements.txt` lives.
+No Node.js build is required for the frontend. Exact Python dependency versions are recorded in `requirements.txt`; development dependencies are in `requirements-dev.txt`.
+
+## Quick start
+
+You need **Python 3.12 or later**, Git, and a running MongoDB instance. Installing Python packages does not install MongoDB itself.
+
+### Windows PowerShell
 
 ```powershell
+git clone https://github.com/SOLANKYYY/signal-desk.git
+cd signal-desk
 py -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-# Only if MongoDB is NOT already running and Docker is installed:
-# docker compose up -d
+```
+
+If MongoDB already runs locally on port 27017, start the app:
+
+```powershell
 .\.venv\Scripts\python.exe -m backend.server
 ```
 
-If `py` is unavailable, use `python -m venv .venv`. No PowerShell activation-policy changes are needed because the commands call the virtual-environment interpreter directly.
+Alternatively, if Docker Desktop is installed and running, start the bundled database first:
 
-Open **http://localhost:8000**. The first start creates indexes and seeds the catalog; repeated starts preserve existing analyst reviews. Keep the terminal open. Stop with Ctrl+C.
+```powershell
+docker compose up -d
+.\.venv\Scripts\python.exe -m backend.server
+```
 
-If you already have MongoDB running on port 27017, skip `docker compose up -d`. Do not start two MongoDB servers on the same port.
+Open **http://localhost:8000**. Keep the terminal running; stop the server with **Ctrl+C**. Initial startup prepares the database and seeds the report catalog. Repeated startup preserves saved reviews.
 
-## Run on macOS / Linux
+The commands call the virtual environment's Python directly, so activation is optional. If `py` is unavailable, use `python -m venv .venv`.
+
+### macOS / Linux
 
 ```bash
+git clone https://github.com/SOLANKYYY/signal-desk.git
+cd signal-desk
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-docker compose up -d
+# Optional, if using the bundled database and Docker is installed:
+# docker compose up -d
 .venv/bin/python -m backend.server
 ```
 
-Open http://localhost:8000.
+A reachable MongoDB instance is required before starting the app.
 
-## Use the website
+### First investigation
 
-1. The **Alerts & threat levels** dashboard opens first. Automatic PDF processing starts while the server is running. Its first pass downloads catalog PDFs sequentially and can take a long time/use substantial bandwidth. Inspect indexed, failed and remaining counts; Pause/Resume controls persist across restarts. Open **Intelligence feed**. Search for `ransomware`; filter report type to training/articles. Open a fictional report, inspect its source and indicators, and save an assessment with a reasoning note. The rule only assigns a topic; you make the evidence-based verdict.
-2. Open **Sources & indicators** to inspect referenced identities.
-3. Open **Schema laboratory** → **Run $bsonSize analysis**.
-4. Click **Build embedded source alternative**, then rerun the size analysis to include the alternative collection. See the generated execution plans in `results/schema_redesign.json`.
-5. Pause automatic report processing in **Alerts & threat levels**, wait for the current report to finish, then open **Working set** → **Generate 100,000 lab documents**. Wait for completion. Only the disposable `working_set` collection is replaced.
-6. Click **Inspect cache capacity**, then **Run 3 randomized full passes**. Cache sampling continues every 10 seconds. A pass may complete between monitor samples; the CLI also captures counters at each pass boundary.
-7. Return to Schema laboratory and rerun the size analysis to verify all 100,000 documents have an average/minimum/maximum BSON size of 2,048 bytes.
-8. Download lab results JSON, take screenshots, and complete your measured-observation table in `docs/TECHNICAL_GUIDE.md`.
+1. Open the alerts dashboard and inspect indexing progress, failed publications, and attention levels.
+2. Search the intelligence feed and open a report.
+3. Review its source, extracted evidence, and related entities.
+4. Record an analyst verdict and explanation.
+5. Acknowledge or reopen an alert as appropriate.
 
-Keep the backend running while a job executes. Jobs are serialized within the website. Do not run CLI regeneration at the same time as a web experiment. Refreshing the browser does not cancel a job, but stopping the server does.
-
-## Run the labs through commands
-
-These examples use Windows. On macOS/Linux replace `.\.venv\Scripts\python.exe` with `.venv/bin/python`.
-
-```powershell
-# Optional: restore the included BSON application dump into the configured DB.
-# Matching IDs are replaced, so do this BEFORE making your own assessments.
-.\.venv\Scripts\python.exe -m backend.dump restore
-
-# Idempotent seed, schema measurements, embedded alternative.
-.\.venv\Scripts\python.exe -m backend.labs seed
-.\.venv\Scripts\python.exe -m backend.labs sizes
-.\.venv\Scripts\python.exe -m backend.labs redesign
-
-# Generate and measure a real MongoDB workload.
-.\.venv\Scripts\python.exe -m backend.labs generate
-.\.venv\Scripts\python.exe -m backend.labs sizes
-.\.venv\Scripts\python.exe -m backend.labs capacity
-.\.venv\Scripts\python.exe -m backend.labs reads --passes 3
-
-# Optional separate terminal: real telemetry and new-report checks.
-# Do not run this if the web server's built-in monitor is already enabled.
-.\.venv\Scripts\python.exe -m backend.labs monitor
-
-# One-off check for new public reports.
-.\.venv\Scripts\python.exe -m backend.labs sync
-
-# After your own work, refresh the application BSON dump for submission.
-.\.venv\Scripts\python.exe -m backend.dump export
-
-# Unit tests (no running MongoDB server needed).
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-```
-
-The bundled seed dump contains `sources`, `reports`, `indicators`, and `observations`. New exports also include `evidence_passages` and `import_state`; restore accepts the older four-collection format. PDF text is indexed on your machine, not preloaded or redistributed in this ZIP. The 195 MiB workload is generated on demand and excluded from the ZIP to keep it small. `backend.dump restore` retains BSON types and verifies counts/checksums. You may also use MongoDB Database Tools `mongorestore --db signal_desk data/dump` for the BSON collection files; the supplied Python restore command does not require Database Tools and recreates indexes.
+Automatic PDF processing can use substantial bandwidth. Pause it in the dashboard when needed. PDFs are downloaded temporarily for extraction; the application stores extracted evidence rather than a permanent PDF archive.
 
 ## Configuration
 
-Environment variables are optional; the defaults work with the bundled Docker configuration.
+Set environment variables in your shell for local use or in the Vercel project settings for cloud use. **The application does not automatically load `.env` files.**
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `MONGODB_URI` | `mongodb://127.0.0.1:27017` | MongoDB connection URI |
-| `MONGODB_DB` | `signal_desk` | Dedicated coursework database |
+| Variable | Default / requirement | Purpose |
+| --- | --- | --- |
+| `MONGODB_URI` | Local default: `mongodb://127.0.0.1:27017` | Database connection; use your hosted URI on Vercel |
+| `MONGODB_DB` | `signal_desk` | Application database |
 | `PORT` | `8000` | Local HTTP port |
-| `AUTO_MONITOR` | `1` | Set `0` to disable sampling/discovery; pause automatic PDF processing separately before isolated benchmarks |
-| `AUTO_PROCESS_REPORTS` | `1` | Initial automatic PDF-processing preference; later Start/Pause choices persist in MongoDB and take precedence |
-| `SYNC_INTERVAL_SECONDS` | `300` | New-report polling delay after each completed attempt; cache sampling remains 10 seconds |
-| `CTI_FEED_URLS` | empty | Comma-separated permitted HTTPS RSS/Atom feed URLs |
+| `APP_USERNAME` | Cloud default: `admin` | Hosted application login name |
+| `APP_PASSWORD` | Required for cloud; at least 16 characters | Hosted application password |
+| `CRON_SECRET` | Required for cloud; at least 32 characters | Scheduled-request authentication |
+| `AUTO_MONITOR` | `1` | Local monitoring and discovery toggle |
+| `AUTO_PROCESS_REPORTS` | `1` | Initial processing preference; saved pause/resume choices take precedence |
+| `SYNC_INTERVAL_SECONDS` | `300` | Local source update interval |
+| `CTI_FEED_URLS` | Empty | Optional comma-separated permitted HTTPS RSS/Atom feeds |
 
-Example in PowerShell:
+Example local settings:
 
 ```powershell
-$env:SYNC_INTERVAL_SECONDS="300"
-$env:MONGODB_URI="mongodb://127.0.0.1:27017"
+$env:MONGODB_URI = "mongodb://127.0.0.1:27017"
+$env:MONGODB_DB = "signal_desk"
 .\.venv\Scripts\python.exe -m backend.server
 ```
 
-The app does not load `.env` files automatically. Set variables in the shell. Keep credentials out of submitted code and screenshots.
+Keep credentials, tokens, and private database exports out of Git. The website password and MongoDB database-user password serve different purposes.
 
-## Source availability and interpretation
+## Deployment
 
-CTI Digest's public page exposes the concept of news, sources and an IOC registry. Automated retrieval returned HTTP 403 during preparation. The importer handles readable article HTML and discovered RSS/Atom feeds, or configured permitted feeds. It cannot promise compatibility with a blocked or JavaScript-only source. Source failures remain visible; other imports and the bundled lab remain usable. The annual-report parser handles the repository's current report-bullet format and fails clearly when no entries are found.
+The repository includes a Flask entrypoint, Vercel configuration, a queue worker, and scheduled synchronization. Follow [the Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md) for account setup, secrets, Atlas permissions, networking, and verification.
 
-The GitHub dataset is a report catalog, not a labeled incident dataset or 100,000-row MongoDB dump. The seed includes metadata only. The 100,000 generated records are explicitly synthetic. Classification uses transparent keyword topic rules plus human review; it does not claim ML accuracy or determine maliciousness from a publisher's name.
+| Capability | Local server | Vercel deployment |
+| --- | --- | --- |
+| Catalog, search, evidence, reviews, and alerts | Available | Available after configuration |
+| Automatic PDF processing | Local background processor | Vercel Queues worker |
+| Source synchronization | Local polling / manual action | Scheduled / manual action |
+| Schema analysis | Available | Available |
+| Large synthetic workload and cache measurements | Local tools | Disabled |
+| Login | Local service; keep on your own machine | Single-user password gate |
 
-## Project layout
+Cloud operation depends on Atlas connectivity, configured secrets, and queue availability. The password gate is not a multiuser identity or role-management system. Deployment success must be checked in your own environment.
 
-```text
-signal-desk/
-  frontend/          HTML, CSS and JavaScript browser interface
-  backend/           API, schema, ingestion, lab commands, monitor, dump tools
-  data/              Report metadata snapshot, provenance notes, BSON dump
-  docs/              Lab answers, submission guide and interface screenshots
-  mongodb/           Optional mongosh indexing and BSON verification scripts
-  tests/             Parser, classifier, BSON size and cache-delta tests
-  results/           Your newly generated measurements (initially empty)
-  validation-results/  Measurements from the preparation test environment
-  requirements.txt
-  docker-compose.yml
-  README.md
+## Data sources and boundaries
+
+- [CTI Digest](https://ctidigest.com/): discovery from readable public content and permitted feeds. Blocked or JavaScript-only pages may not be ingestible; failures remain visible.
+- [Awesome Annual Security Reports](https://github.com/jacobdjwilson/awesome-annual-security-reports): catalog references to publisher reports.
+- Bundled fictional scenarios use reserved `.invalid` domains and are labelled as fictional.
+
+The initial catalog contains metadata references, not a pre-reviewed collection of PDFs. Counts change as sources are synchronized. Original reports remain the work of their publishers; links and extracted evidence do not imply endorsement. See [data provenance](data/PROVENANCE.md).
+
+The processor retrieves report PDFs; it does not download malware or contact addresses merely because they appear as indicators in a report.
+
+## Project structure
+
+| Path | Responsibility |
+| --- | --- |
+| `frontend/` | Browser layout, styling, and interaction |
+| `backend/` | HTTP routes, ingestion, evidence extraction, alerts, database operations, and analysis tools |
+| `app.py` | Flask deployment entrypoint |
+| `worker.py` | Cloud queue subscriber |
+| `data/` | Seed metadata, provenance, and bundled BSON data |
+| `docs/` | Setup, operation, technical details, and validation notes |
+| `mongodb/` | Optional MongoDB helper scripts |
+| `scripts/` | Build helpers |
+| `tests/` | Automated Python checks |
+| `results/` | Locally generated analysis output |
+| `vercel.json`, `pyproject.toml` | Deployment and Python project configuration |
+
+## Development and testing
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-## API overview
+The automated suite includes controlled downloads and mock database/queue operations. Passing it does not establish real Atlas connectivity, Vercel queue delivery, or performance. Validate those separately in the deployed environment.
 
-| Endpoint | Purpose |
-|---|---|
-| `GET /api/health` | Check MongoDB connection |
-| `GET /api/summary` | Counts and classification totals |
-| `GET /api/reports?q=...&category=...&verdict=...&kind=...&page=1` | Search/filter/paginate |
-| `GET /api/reports/{id}` | Detail, publisher and linked indicators |
-| `POST /api/review/{id}` | Save category, verdict and evidence note |
-| `GET /api/sources`, `GET /api/indicators` | Reference directories |
-| `GET /api/metrics` | Latest real cache sample and recent history |
-| `GET /api/capacity` | Cache capacity and collection-size estimate |
-| `POST /api/jobs/{sizes,redesign,generate,reads,sync}` | Run a background task |
-| `GET /api/jobs`, `GET /api/results` | Job states and generated lab outputs |
-| `GET /api/entities`, `GET /api/entity?name=...` | Local entity counts and related reports |
-| `GET /api/catalog`, `GET /api/evidence?q=...&page=1` | PDF catalog and passage search |
-| `POST /api/jobs/index-pdf` with `{ "reportId": "..." }` | Index a catalog PDF in the background |
-| `GET /api/source-status` | Source-check outcomes and cadence |
-| `GET /api/processing`, `POST /api/processing` | Queue status; body action `start`, `pause`, or `retry` |
-| `GET /api/alerts?level=critical&ack=1&page=1` | Provisional report alerts and severity counts |
-| `POST /api/alerts/{id}` | Set alert status to `acknowledged` or `open` |
+See [Contributing](CONTRIBUTING.md) and [the GitHub workflow](docs/GITHUB_WORKFLOW.md) for changes, commits, and pull requests.
 
-## Troubleshooting
+## Documentation
 
-- **Connection refused / server selection timeout:** start MongoDB, check port 27017, and wait for `docker compose ps` to show a healthy service. Python dependencies do not install the database server.
-- **Docker unavailable:** install/start MongoDB Community locally, or install/start Docker Desktop. The web server needs a real MongoDB instance.
-- **`serverStatus` unauthorized or WiredTiger metrics unavailable:** use the local Docker instance for this lab. A remote authenticated setup needs read/write access to this lab DB plus monitoring privileges (for example the `clusterMonitor` role on `admin`). Some managed tiers restrict these counters.
-- **Hit ratio N/A:** wait for an interval with reads. First samples, idle periods, unavailable/reset/incomparable counters intentionally have no ratio.
-- **Hit ratio already high on pass 1:** generation warms the cache; this is expected and not evidence of a broken experiment.
-- **CTI source blocked:** review the sync warning. Use the bundled training data or configure an authorized public RSS feed. No login or bypass is attempted.
-- **Incomplete generation after interruption:** run generation again; it rebuilds only `working_set`.
-- **Port 8000 occupied:** set `PORT` to 8001 and open that port.
+- [User guide](docs/USER_GUIDE.md)
+- [Technical guide](docs/TECHNICAL_GUIDE.md)
+- [Vercel deployment](docs/VERCEL_DEPLOYMENT.md)
+- [Validation history](docs/TESTING.md)
+- [GitHub setup and update commands](docs/GITHUB_WORKFLOW.md)
+- [Security guidance](SECURITY.md)
 
-To stop the Docker service without deleting its data, use `docker compose stop`. Do not delete the volume unless you intend to remove your lab data.
+## Maintainer
 
-## Upgrade from your previous download
-
-1. Stop the running Python server with Ctrl+C.
-2. Extract the new ZIP and use its `signal-desk` folder. Keep the same MongoDB connection/database settings. Your database stores your existing assessments independently of the project folder.
-3. Run `py -m venv .venv` if this is a fresh folder, then `.\.venv\Scripts\python.exe -m pip install -r requirements.txt` to install the added PDF reader.
-4. Start `.\.venv\Scripts\python.exe -m backend.server` and open http://localhost:8000. Keep the terminal running. Refresh the browser to load the new interface.
-5. Do not restore the sample dump over your saved work. Startup applies additive indexes/entity fields and preserves saved verdicts and notes. Keep copies of any `results/` files you generated in the previous folder.
-
-Your earlier log showed a successful database connection, so you can skip Docker while that MongoDB service is running.
-
-See `docs/UPDATE_NOTES.md` for the feature comparison, new workflows and limitations. The local version has not been published.
-
-
-## Automatic ratings and alerts
-
-The dashboard shows **Critical**, **High**, **Medium**, **Low**, or **Not assessed**. Ratings describe the attention needed for the text in a report. They are provisional rules, not verified incident severity, a CVSS score, or proof that your own system is affected. High and critical reports create alerts. Each alert gives its rule, source excerpt, publication year when available, and PDF page. You can acknowledge/reopen alerts independently of saved analyst verdicts.
-
-Annual-report titles and metadata alone receive **Not assessed**. The worker attempts each catalog PDF once and persists failures for explicit retry. Successful extraction is cached as searchable passages; already-indexed reports are reused on restart. PDFs themselves are temporary, and no threat files or indicator addresses are downloaded/contacted. Download, extraction and page/text limits from the previous version remain in force. Fictional scenarios never create automatic alerts. Original APIs and data sources are unchanged.
-
-Keep the terminal running for processing to continue. The ZIP contains the processor, not 465 pre-downloaded/verified PDFs. A blocked, oversized, scanned or unreadable publication may remain unassessed. Use the failure panel to inspect the reason. Low priority means no higher-priority rule matched; it does not establish safety.
+Maintained by [SOLANKYYY](https://github.com/SOLANKYYY).
