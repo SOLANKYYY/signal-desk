@@ -185,3 +185,7 @@ See [Contributing](CONTRIBUTING.md) and [the GitHub workflow](docs/GITHUB_WORKFL
 ## Maintainer
 
 Maintained by [SOLANKYYY](https://github.com/SOLANKYYY).
+
+## Chapter 8 Replica Set Lab
+
+Open **Replica Set Lab** in the sidebar to upload your Docker experiment JSON files and explore recorded replication, arbiter, failover, and election evidence. Runs locally and on the authenticated Vercel site. This page shows saved results, not live container status. See [setup and upload instructions](labs/chapter08/README.md).

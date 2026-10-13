@@ -7,10 +7,14 @@ from .server import Handler, encode
 from . import cloud
 
 app=Flask(__name__,static_folder=None)
-app.config['MAX_CONTENT_LENGTH']=10000
+app.config['MAX_CONTENT_LENGTH']=1024*1024
 
 def respond(data,status=200):
     return Response(json.dumps(data,default=encode),status=status,mimetype='application/json',headers={'Cache-Control':'no-store'})
+
+@app.errorhandler(413)
+def too_large(error):
+    return respond({'error':'Request too large'},413)
 
 @app.before_request
 def authorize():
@@ -24,6 +28,8 @@ def authorize():
     if not auth or auth.type!='basic' or not hmac.compare_digest((auth.username or '').encode(),username.encode()) or not hmac.compare_digest((auth.password or '').encode(),password.encode()):
         return Response('Sign in to Signal Desk.',401,headers={'WWW-Authenticate':'Basic realm="Signal Desk", charset="UTF-8"','Cache-Control':'no-store'})
     if request.method=='POST':
+        limit=1024*1024 if request.path=='/api/replica-lab/import' else 10000
+        if request.content_length is not None and request.content_length>limit:return respond({'error':'Request too large'},413)
         origin=request.headers.get('Origin')
         if origin and urlparse(origin).netloc!=request.host:return respond({'error':'Cross-origin write blocked'},403)
 
@@ -36,7 +42,7 @@ class Bridge(Handler):
 @app.route('/',methods=['GET'])
 @app.route('/<path:path>',methods=['GET','POST'])
 def route(path=''):
-    if request.method=='GET' and path in ('','app.js','styles.css'):
+    if request.method=='GET' and path in ('','app.js','styles.css','replica-lab.js'):
         name=path or 'index.html';mime='text/html' if not path else 'application/javascript' if path.endswith('.js') else 'text/css'
         return Response((ROOT/'frontend'/name).read_bytes(),mimetype=mime,headers={'Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'",'X-Content-Type-Options':'nosniff'})
     if not path.startswith('api/'):return respond({'error':'Not found'},404)

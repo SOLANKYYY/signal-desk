@@ -6,3 +6,26 @@
 @media(max-width:1100px){.filters select{max-width:none}.pagination{flex-wrap:wrap;gap:14px}.two-col{grid-template-columns:1fr}}
 @media(max-width:600px){.header-actions{gap:6px}.status{font-size:9px;padding:6px}.header-actions button{font-size:10px}header>.eyebrow{max-width:90px;line-height:1.5}.filters>*{flex-basis:100%}.filters select,.filters input[type=number],.date-label input{width:100%}.passage-heading{flex-direction:column}.health-row{gap:10px}}
 .processing-panel{margin-bottom:20px}.process-actions{display:flex;gap:10px;flex-wrap:wrap}progress{width:100%;height:13px;accent-color:#57986a}.level-counts{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:20px 0}.level-counts article{padding:18px;background:var(--white);border:1px solid var(--line);border-radius:9px}.level-counts strong{display:block;font-size:28px;margin:10px 0 5px}.level-counts small{color:var(--muted);font-size:10px}.level-critical{background:#f9d6dd!important;color:#991e3d!important}.level-high{background:#ffe1c7!important;color:#985217!important}.level-medium{background:#fff0bf!important;color:#7f6517!important}.level-low{background:#dcf0e8!important;color:#32604c!important}.level-not-assessed{background:#e5e9ee!important;color:#566170!important}.alert-card{padding:20px 0;border-top:1px solid var(--line)}.alert-card h3{margin:0;line-height:1.5}.alert-card blockquote,.triage-box blockquote{margin:14px 0;border-left:3px solid var(--green);background:var(--paper);padding:14px;font-size:12px;line-height:1.7}.alert-card blockquote small{display:block;margin-top:8px;color:var(--muted)}.triage-box{margin:20px 0;padding:16px;border:1px solid var(--line);border-radius:8px}.triage-box h3{margin-top:0}#process-errors{overflow-wrap:anywhere}#alert-filters{align-items:center}#alert-filters label{font-size:12px;color:var(--muted)}@media(max-width:700px){.level-counts{grid-template-columns:repeat(2,1fr)}.process-actions button{width:100%}}
+
+/* Chapter 8: recorded replica-set evidence, isolated from CTI metrics. */
+[hidden]{display:none!important}
+.replica-intro{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding:26px;margin-bottom:20px}
+.replica-intro>div{max-width:760px}.replica-intro button{flex-shrink:0}
+.replica-upload,.replica-help,.replica-section{padding:24px;margin-bottom:22px}
+.replica-upload form{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.replica-upload label{width:100%;font-weight:600}.replica-upload input{max-width:100%;padding:10px;border:1px solid var(--line);border-radius:8px}
+.replica-activities{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:24px 0}
+.replica-activity{background:var(--white);border:1px solid var(--line);color:var(--ink);text-align:left;padding:20px;display:grid;gap:10px}
+.replica-activity span{font-size:12px;color:var(--muted)}.replica-activity.selected{border:2px solid var(--green);padding:19px}
+.replica-result-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.replica-members{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:22px}
+.replica-member{padding:22px;overflow-wrap:anywhere}.replica-member h3{font-size:18px}.replica-primary{border-top:4px solid var(--green)}
+.replica-timeline{list-style:none;padding:0 0 0 16px;border-left:2px solid var(--line)}
+.replica-timeline li{padding:12px 12px 24px;overflow-wrap:anywhere}.replica-timeline time{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+.replica-timeline strong{display:block;font-size:17px}.replica-timeline p{margin:8px 0}.replica-timeline small{color:var(--muted)}
+.replica-read-strip{display:flex;flex-wrap:wrap;gap:4px;margin:18px 0}.replica-read-strip span{width:14px;height:32px;border-radius:3px}.read-ok{background:#459667}.read-failed{background:#cf604c}
+.replica-step{padding:14px 0;border-bottom:1px solid var(--line)}.replica-step summary,.replica-help summary{cursor:pointer;font-weight:600}
+.replica-step pre{max-height:380px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.replica-step code{overflow-wrap:anywhere}
+.replica-metrics strong{font-size:25px}.replica-metrics article{background:var(--white)}
+@media(max-width:1000px){.replica-activities{grid-template-columns:repeat(2,minmax(0,1fr))}.replica-intro{flex-direction:column}}
+@media(max-width:600px){.replica-activities,.replica-members{grid-template-columns:1fr}.replica-result-heading{align-items:flex-start;flex-direction:column}.replica-upload,.replica-help,.replica-section,.replica-intro{padding:18px}.replica-upload form{align-items:stretch;flex-direction:column}.replica-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
