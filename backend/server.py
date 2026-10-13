@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from .db import db, client, ROOT, indexes
 from .core import VERDICTS, CATEGORIES, now
 from .ingest import seed
+from . import replica_lab
 from .alerts import processor, alert_list, LEVELS, analyze_report
 from .investigation import (search_query, entity_profiles, related_profile, index_pdf, evidence_search,
                             migrate_entities, labels, entities_for)
@@ -47,6 +48,11 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:self.send_json({'error':str(e)},503)
     def get(self):
         u=urlparse(self.path);q={k:v[0] for k,v in parse_qs(u.query).items()};path=u.path
+        if path=='/api/replica-lab':
+            return self.send_json(replica_lab.list_runs(db))
+        if path.startswith('/api/replica-lab/'):
+            result=replica_lab.get_run(db,path.split('/')[-1])
+            return self.send_json(result or {'error':'Lab result not found'},200 if result else 404)
         if path=='/api/health':
             client.admin.command('ping');return self.send_json({'ok':True,'database':db.name})
         if path=='/api/summary':
@@ -120,7 +126,7 @@ class Handler(BaseHTTPRequestHandler):
                 file=ROOT/'results'/name
                 if file.exists():result[name]=json.loads(file.read_text())
             return self.send_json(result)
-        files={'/':'index.html','/app.js':'app.js','/styles.css':'styles.css'}
+        files={'/':'index.html','/app.js':'app.js','/styles.css':'styles.css','/replica-lab.js':'replica-lab.js'}
         if path not in files:return self.send_json({'error':'Not found'},404)
         file=ROOT/'frontend'/files[path];data=file.read_bytes()
         mime={'.html':'text/html','.js':'text/javascript','.css':'text/css'}[file.suffix]
@@ -134,11 +140,14 @@ class Handler(BaseHTTPRequestHandler):
             origin=self.headers.get('Origin')
             if origin and urlparse(origin).netloc!=self.headers.get('Host'):
                 return self.send_json({'error':'Cross-origin write blocked'},403)
+            path=urlparse(self.path).path
+            limit=replica_lab.MAX_UPLOAD if path=='/api/replica-lab/import' else 10000
             length=int(self.headers.get('Content-Length','0'))
-            if not 0<=length<=10000:raise ValueError('Request too large')
+            if not 0<=length<=limit:return self.send_json({'error':'Request too large'},413)
             body=json.loads(self.rfile.read(length) or b'{}')
             if not isinstance(body,dict):raise ValueError('JSON object required')
             path=urlparse(self.path).path
+            if path=='/api/replica-lab/import':return self.send_json(replica_lab.import_run(db,body),201)
             if path=='/api/processing':return self.send_json(processor.control(body.get('action')))
             if path.startswith('/api/alerts/'):
                 status=body.get('status')
@@ -166,7 +175,7 @@ class Handler(BaseHTTPRequestHandler):
                         'verdict':verdict,'category':category,'note':note.strip()}],'$slice':-20}}})
                 return self.send_json({'updated':result.matched_count},200 if result.matched_count else 404)
             return self.send_json({'error':'Not found'},404)
-        except (ValueError,TypeError) as e:self.send_json({'error':str(e)},400)
+        except (ValueError,TypeError,RecursionError) as e:self.send_json({'error':str(e)},400)
         except Exception as e:self.send_json({'error':str(e)},503)
 
 def main():
