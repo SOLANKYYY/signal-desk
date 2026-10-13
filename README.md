@@ -189,3 +189,9 @@ Maintained by [SOLANKYYY](https://github.com/SOLANKYYY).
 ## Chapter 8 Replica Set Lab
 
 Open **Replica Set Lab** in the sidebar to upload your Docker experiment JSON files and explore recorded replication, arbiter, failover, and election evidence. Runs locally and on the authenticated Vercel site. This page shows saved results, not live container status. See [setup and upload instructions](labs/chapter08/README.md).
+
+### Exercise 9: write concern and network partitions
+
+The **Exercise 9 · Write concern** page offers a downloadable Docker kit, imports its two measured JSON outputs, and shows six 1,000-write benchmarks, journal comparisons, partition write outcomes, election states, and catch-up evidence. A printable report includes the student's Docker Hub URL and explanation. See [the kit guide](labs/chapter09/README.md) for local Windows commands and Docker Hub submission/demo steps.
+
+The isolated three-node kit uses no host ports and no arbiter. The hosted application only validates and stores the latest result per activity in `exercise9_runs`; it never runs Docker or reconfigures the production database. Exercise 8 uploads remain separate. `w:3` implements all three data-bearing nodes, since MongoDB has no built-in `w:"all"` mode. No measurements are preloaded.

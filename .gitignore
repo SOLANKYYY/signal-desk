@@ -13,3 +13,6 @@ results/*
 !results/.gitkeep
 data/pdf-cache/
 public/
+
+# Keep local measurements out of source control.
+labs/chapter09/results/

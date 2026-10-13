@@ -29,3 +29,20 @@
 .replica-metrics strong{font-size:25px}.replica-metrics article{background:var(--white)}
 @media(max-width:1000px){.replica-activities{grid-template-columns:repeat(2,minmax(0,1fr))}.replica-intro{flex-direction:column}}
 @media(max-width:600px){.replica-activities,.replica-members{grid-template-columns:1fr}.replica-result-heading{align-items:flex-start;flex-direction:column}.replica-upload,.replica-help,.replica-section,.replica-intro{padding:18px}.replica-upload form{align-items:stretch;flex-direction:column}.replica-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Exercise 9 */
+.ex9-download{display:inline-block;text-decoration:none;white-space:nowrap;padding:12px 16px;border-radius:8px;background:var(--green);color:var(--white)}
+.ex9-steps{padding:24px;margin-bottom:22px}.ex9-steps li{padding:5px 0;line-height:1.7}.ex9-steps pre{padding:12px;background:var(--paper);overflow:auto;border-radius:6px}.ex9-progress{padding:16px 0;color:var(--green);font-weight:600}.ex9-switch{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}.ex9-switch [aria-pressed=true]{outline:2px solid var(--green)}
+#exercise9 .table-wrap{overflow:auto}#exercise9 caption{text-align:left;padding:12px;color:var(--muted)}#exercise9 td{vertical-align:top}#exercise9 li{line-height:1.7}#exercise9 .ex9-submission label{display:block;margin:18px 0 8px}#ex9-hub,#ex9-notes{width:100%;box-sizing:border-box;max-width:100%}#ex9-notes{resize:vertical;padding:12px}.ex9-print-only{display:none;white-space:pre-wrap;overflow-wrap:anywhere}
+@media print{
+ body.exercise9-active{background:white!important;color:black!important}
+ body.exercise9-active .sidebar,body.exercise9-active header,body.exercise9-active footer,body.exercise9-active .page-heading,body.exercise9-active main>.metrics,body.exercise9-active .ex9-no-print,body.exercise9-active .ex9-steps,body.exercise9-active .ex9-download{display:none!important}
+ body.exercise9-active main{margin:0;padding:0}
+ body.exercise9-active .tab-panel{display:none!important}
+ body.exercise9-active #exercise9,body.exercise9-active #ex9-latency,body.exercise9-active #ex9-partition{display:block!important}
+ body.exercise9-active .panel{background:white!important;color:black!important;box-shadow:none;border:1px solid #ccc;padding:14px}
+ body.exercise9-active #exercise9 .muted,body.exercise9-active #exercise9 code{color:#444!important}
+ body.exercise9-active #exercise9 table{font-size:10px;width:100%}body.exercise9-active #exercise9 td,body.exercise9-active #exercise9 th{padding:6px;color:black;background:white}
+ body.exercise9-active #exercise9 .table-wrap{overflow:visible}
+ body.exercise9-active .ex9-submission input,body.exercise9-active .ex9-submission textarea,body.exercise9-active .ex9-submission label,body.exercise9-active .ex9-submission>p{display:none}
+ body.exercise9-active .ex9-print-only{display:block}body.exercise9-active .replica-timeline li{break-inside:avoid}body.exercise9-active #ex9-partition{break-before:page}
+}

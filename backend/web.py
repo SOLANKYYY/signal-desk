@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from flask import Flask, request, Response
 from .db import db, ROOT, client
 from .server import Handler, encode
-from . import cloud
+from . import cloud, exercise9
 
 app=Flask(__name__,static_folder=None)
 app.config['MAX_CONTENT_LENGTH']=1024*1024
@@ -28,7 +28,7 @@ def authorize():
     if not auth or auth.type!='basic' or not hmac.compare_digest((auth.username or '').encode(),username.encode()) or not hmac.compare_digest((auth.password or '').encode(),password.encode()):
         return Response('Sign in to Signal Desk.',401,headers={'WWW-Authenticate':'Basic realm="Signal Desk", charset="UTF-8"','Cache-Control':'no-store'})
     if request.method=='POST':
-        limit=1024*1024 if request.path=='/api/replica-lab/import' else 10000
+        limit=1024*1024 if request.path in ('/api/replica-lab/import','/api/exercise9/import') else 10000
         if request.content_length is not None and request.content_length>limit:return respond({'error':'Request too large'},413)
         origin=request.headers.get('Origin')
         if origin and urlparse(origin).netloc!=request.host:return respond({'error':'Cross-origin write blocked'},403)
@@ -42,9 +42,11 @@ class Bridge(Handler):
 @app.route('/',methods=['GET'])
 @app.route('/<path:path>',methods=['GET','POST'])
 def route(path=''):
-    if request.method=='GET' and path in ('','app.js','styles.css','replica-lab.js'):
+    if request.method=='GET' and path in ('','app.js','styles.css','replica-lab.js','exercise9.js'):
         name=path or 'index.html';mime='text/html' if not path else 'application/javascript' if path.endswith('.js') else 'text/css'
         return Response((ROOT/'frontend'/name).read_bytes(),mimetype=mime,headers={'Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'",'X-Content-Type-Options':'nosniff'})
+    if request.method=='GET' and path=='api/exercise9/kit':
+        return Response(exercise9.kit_bytes(),mimetype='application/zip',headers={'Content-Disposition':'attachment; filename=SignalDesk_Exercise9.zip','Cache-Control':'no-store'})
     if not path.startswith('api/'):return respond({'error':'Not found'},404)
     if not os.getenv('MONGODB_URI','').startswith(('mongodb://','mongodb+srv://')):return respond({'error':'Set the hosted MONGODB_URI environment variable and redeploy.'},503)
     try:

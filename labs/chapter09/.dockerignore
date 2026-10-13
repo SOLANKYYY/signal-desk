@@ -1,0 +1,5 @@
+results/*
+!results/lab_9_1_latency.json
+!results/lab_9_2_partition.json
+__pycache__
+.env

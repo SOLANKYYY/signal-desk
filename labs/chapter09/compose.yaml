@@ -1,0 +1,33 @@
+name: signal-desk-exercise9
+x-mongo: &mongo
+  image: mongo:7.0
+  command: [mongod, --replSet, sd9, --bind_ip_all]
+  networks: [lab]
+services:
+  sd9-mongo1:
+    <<: *mongo
+    container_name: sd9-mongo1
+    volumes: [mongo1:/data/db]
+  sd9-mongo2:
+    <<: *mongo
+    container_name: sd9-mongo2
+    volumes: [mongo2:/data/db]
+  sd9-mongo3:
+    <<: *mongo
+    container_name: sd9-mongo3
+    volumes: [mongo3:/data/db]
+  python:
+    profiles: [tools]
+    build: .
+    image: ${LAB_IMAGE:-signal-desk-exercise9:local}
+    networks: [lab]
+    volumes: [./results:/results]
+    environment:
+      RESULTS_DIR: /results
+networks:
+  lab:
+    name: signal-desk-exercise9-net
+volumes:
+  mongo1:
+  mongo2:
+  mongo3:
