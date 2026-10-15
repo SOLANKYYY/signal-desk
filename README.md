@@ -23,7 +23,7 @@ Ratings are transparent, rule-based indicators of the attention a report's text 
 
 Annual-report metadata alone remains **Not assessed**. Blocked, scanned, oversized, or unreadable PDFs may also remain unassessed. Clearly marked fictional scenarios are excluded from automatic alerts. Analyst verdicts and alert acknowledgements remain separate decisions.
 
-## Technology
+## Technology.
 
 | Area | Tools | Purpose |
 | --- | --- | --- |
