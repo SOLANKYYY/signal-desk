@@ -8,9 +8,10 @@ Signal Desk brings public report metadata, extracted passages, provisional threa
 
 ## Features
 
+
 - **Intelligence catalog:** search reports, summaries, CVEs, indicators, analyst labels, and indexed PDF passages. Filter by publisher, date, year, report type, category, and verdict.
 - **PDF processing:** sequential download and text extraction with persistent progress, pause/resume, and explicit retry for failed publications.
-- **Evidence search:** inspect matching passages, page references, related reports, and entity/CVE profiles.
+- **Evidence search:** inspect matching passages, page references, related reports, and entity/CVE profiles..
 - **Threat attention levels:** Critical, High, Medium, Low, and Not assessed, with supporting rule excerpts. High and critical ratings create alerts that analysts can acknowledge or reopen.
 - **Analyst review:** save a category, verdict, and reasoning note, with recent review history retained separately from automatic ratings.
 - **Source visibility:** inspect provenance, linked indicators, source status, and update outcomes.
