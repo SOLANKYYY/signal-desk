@@ -1,3 +1,7 @@
+## Updated threat dashboard
+
+The root page now has the public-feed intelligence dashboard. Existing coursework and report tools are at `/laboratory`. See [setup, provenance and feature scope](docs/THREAT_DASHBOARD.md). First feed sync imports the bundled 15,000 real indicator observations.
+
 # Signal Desk
 
 **A cyber threat intelligence workspace for investigating security reports, searching PDF evidence, and recording analyst decisions.**

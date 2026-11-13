@@ -42,8 +42,8 @@ class Bridge(Handler):
 @app.route('/',methods=['GET'])
 @app.route('/<path:path>',methods=['GET','POST'])
 def route(path=''):
-    if request.method=='GET' and path in ('','app.js','styles.css','replica-lab.js','exercise9.js'):
-        name=path or 'index.html';mime='text/html' if not path else 'application/javascript' if path.endswith('.js') else 'text/css'
+    if request.method=='GET' and path in ('','laboratory','intel.js','intel.css','app.js','styles.css','replica-lab.js','exercise9.js'):
+        name=('intel.html' if not path else 'index.html' if path=='laboratory' else path);mime='text/html' if path in ('','laboratory') else 'application/javascript' if path.endswith('.js') else 'text/css'
         return Response((ROOT/'frontend'/name).read_bytes(),mimetype=mime,headers={'Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'",'X-Content-Type-Options':'nosniff'})
     if request.method=='GET' and path=='api/exercise9/kit':
         return Response(exercise9.kit_bytes(),mimetype='application/zip',headers={'Content-Disposition':'attachment; filename=SignalDesk_Exercise9.zip','Cache-Control':'no-store'})

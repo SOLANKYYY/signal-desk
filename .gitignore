@@ -16,3 +16,5 @@ public/
 
 # Keep local measurements out of source control.
 labs/chapter09/results/
+# Public feed exports remain local; do not publish bulk data or credentials.
+data/live-threats/

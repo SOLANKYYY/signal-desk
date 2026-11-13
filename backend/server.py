@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from .db import db, client, ROOT, indexes
 from .core import VERDICTS, CATEGORIES, now
 from .ingest import seed
-from . import replica_lab, exercise9
+from . import replica_lab, exercise9, intelligence
 from .alerts import processor, alert_list, LEVELS, analyze_report
 from .investigation import (search_query, entity_profiles, related_profile, index_pdf, evidence_search,
                             migrate_entities, labels, entities_for)
@@ -22,7 +22,7 @@ def encode(value):
 
 def start_job(name, body=None):
     body=body or {}
-    actions={'generate':generate_workload,'reads':random_reads,'sizes':size_analysis,
+    actions={'threat-sync':intelligence.sync_batch,'generate':generate_workload,'reads':random_reads,'sizes':size_analysis,
              'redesign':redesign,'sync':monitor.sync_once,'index-pdf':lambda:index_pdf(str(body.get('reportId','')))}
     if name not in actions:raise ValueError('Unknown job')
     with job_lock:
@@ -48,6 +48,8 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:self.send_json({'error':str(e)},503)
     def get(self):
         u=urlparse(self.path);q={k:v[0] for k,v in parse_qs(u.query).items()};path=u.path
+        if path.startswith('/api/intel/'):
+            return self.send_json(intelligence.get(path[len('/api/intel/'):],q))
         if path=='/api/exercise9/kit':
             data=exercise9.kit_bytes()
             self.send_response(200);self.send_header('Content-Type','application/zip')
@@ -136,7 +138,7 @@ class Handler(BaseHTTPRequestHandler):
                 file=ROOT/'results'/name
                 if file.exists():result[name]=json.loads(file.read_text())
             return self.send_json(result)
-        files={'/':'index.html','/app.js':'app.js','/styles.css':'styles.css','/replica-lab.js':'replica-lab.js','/exercise9.js':'exercise9.js'}
+        files={'/':'intel.html','/laboratory':'index.html','/intel.js':'intel.js','/intel.css':'intel.css','/app.js':'app.js','/styles.css':'styles.css','/replica-lab.js':'replica-lab.js','/exercise9.js':'exercise9.js'}
         if path not in files:return self.send_json({'error':'Not found'},404)
         file=ROOT/'frontend'/files[path];data=file.read_bytes()
         mime={'.html':'text/html','.js':'text/javascript','.css':'text/css'}[file.suffix]
@@ -157,6 +159,8 @@ class Handler(BaseHTTPRequestHandler):
             body=json.loads(self.rfile.read(length) or b'{}')
             if not isinstance(body,dict):raise ValueError('JSON object required')
             path=urlparse(self.path).path
+            if path.startswith('/api/intel/'):
+                return self.send_json(intelligence.post(path[len('/api/intel/'):],body))
             if path=='/api/exercise9/import':return self.send_json(exercise9.import_run(db,body),201)
             if path=='/api/replica-lab/import':return self.send_json(replica_lab.import_run(db,body),201)
             if path=='/api/processing':return self.send_json(processor.control(body.get('action')))

@@ -10,10 +10,10 @@ except ImportError: mongomock=None
 @unittest.skipIf(mongomock is None,'Install development dependencies')
 class CloudTests(unittest.TestCase):
     def setUp(self):
-        from backend import db,alerts,server,investigation,ingest,labs,monitor
+        from backend import db,alerts,server,investigation,ingest,labs,monitor,intelligence
         self.store=mongomock.MongoClient().cloud_test
         self.patches=[]
-        for m in (db,cloud,web,alerts,server,investigation,ingest,labs,monitor):
+        for m in (db,cloud,web,alerts,server,investigation,ingest,labs,monitor,intelligence):
             p=patch.object(m,'db',self.store);p.start();self.patches.append(p)
         self.env=patch.dict(os.environ,{'APP_PASSWORD':'test-password-long-enough','APP_USERNAME':'admin','MONGODB_URI':'mongodb://127.0.0.1:27017','CRON_SECRET':'x'*32,'VERCEL':'1'})
         self.env.start();self.addCleanup(self.env.stop)
@@ -21,6 +21,19 @@ class CloudTests(unittest.TestCase):
         self.store.import_state.insert_one({'_id':'cloud-schema','version':1})
         self.api=web.app.test_client()
         self.auth={'Authorization':'Basic '+base64.b64encode(b'admin:test-password-long-enough').decode()}
+    def test_intelligence_routes_and_lab_preserved(self):
+        self.assertEqual(self.api.get('/api/intel/summary').status_code,401)
+        response=self.api.get('/api/intel/summary',headers=self.auth)
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.json['observations'],0)
+        self.assertIn(b'A clearer view of threats',self.api.get('/',headers=self.auth).data)
+        self.assertIn(b'Replica Set Lab',self.api.get('/laboratory',headers=self.auth).data)
+        self.assertEqual(self.api.get('/intel.js',headers=self.auth).status_code,200)
+        self.assertEqual(self.api.get('/intel.css',headers=self.auth).status_code,200)
+        response=self.api.post('/api/intel/cases',json={'title':'Test research'},headers=self.auth)
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(len(self.api.get('/api/intel/cases',headers=self.auth).json),1)
+
     def report(self,i='r1'):
         self.store.reports.insert_one({'_id':i,'kind':'annual-report','title':'Test report','year':2026,'provenance':{'synthetic':False},'sourceId':'source','assessment':{'verdict':'needs-review'}})
     def test_auth_required_for_html_and_api_and_missing_password_fails_closed(self):

@@ -78,7 +78,7 @@ def list_jobs():
     return list(db.cloud_jobs.find().sort('startedAt',-1).limit(20))
 
 def enqueue_job(name,body):
-    if name not in ('sync','index-pdf','sizes','redesign'):
+    if name not in ('sync','threat-sync','index-pdf','sizes','redesign'):
         raise ValueError('This database workload runs locally. Cloud supports sync, PDF indexing and schema analysis.')
     job_id=uuid.uuid4().hex
     list_jobs()
@@ -121,7 +121,8 @@ def work(message):
     from .ingest import sync_all
     from .investigation import index_pdf
     from .labs import size_analysis,redesign
-    actions={'sync':lambda:{'results':sync_all()},'index-pdf':lambda:index_pdf(str(job['body'].get('reportId',''))),
+    from .intelligence import sync_batch
+    actions={'threat-sync':sync_batch,'sync':lambda:{'results':sync_all()},'index-pdf':lambda:index_pdf(str(job['body'].get('reportId',''))),
              'sizes':size_analysis,'redesign':redesign}
     try:
         result=actions[job['name']]()
