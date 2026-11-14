@@ -1,5 +1,5 @@
 """Evidence-grounded assistant. Real model embeddings; no synthetic fallback answers."""
-import hashlib, json, math, os, re, time, uuid, urllib.request
+import hashlib, json, math, os, re, time, uuid, urllib.request, urllib.error, logging
 from datetime import datetime, timezone, timedelta
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
@@ -30,7 +30,28 @@ def remote(path,payload,c,stream=False):
         response=urllib.request.urlopen(urllib.request.Request(base+path,data=json.dumps(payload).encode(),headers=headers),timeout=90)
         if stream:return response
         with response:return json.load(response)
-    except Exception:raise ChatError('Model service unavailable. Check the server configuration, model download, API quota and connectivity.',503) from None
+    except urllib.error.HTTPError as exc:
+        code='';error_type=''
+        try:
+            detail=json.loads(exc.read(16384)).get('error',{})
+            if isinstance(detail,dict):code=str(detail.get('code') or '');error_type=str(detail.get('type') or '')
+        except Exception:pass
+        # Never log provider bodies: these can contain credential fragments or user input.
+        category='quota' if (error_type=='insufficient_quota' or code in ('insufficient_quota','billing_hard_limit_reached','credit_balance_exhausted','organization_usage_limit_exceeded')) else 'http'
+        logging.getLogger(__name__).warning('Model request rejected: provider=%s status=%s category=%s',c['provider'],exc.code,category)
+        if c['provider']=='openai':
+            if category=='quota':message='OpenAI reports insufficient API quota or credits. Check Billing and usage limits for the OpenAI project that owns this key, then retry Embed selected events. Creating a key alone does not add API credits.'
+            elif exc.code==401:message='OpenAI rejected the API key. Check OPENAI_API_KEY in Vercel, save a valid key and redeploy. Do not send the key in chat.'
+            elif exc.code==403:message='OpenAI denied access. Check this key and project permissions for embeddings and chat completions.'
+            elif exc.code==429:message='OpenAI rate limit reached. Wait a minute and retry with one selected event.'
+            elif exc.code==404:message='The configured OpenAI model was not found or is not available to this API project. Check the embedding and chat model settings.'
+            elif exc.code==400:message='OpenAI rejected the model request. Check the configured model and supported input settings.'
+            else:message='OpenAI is temporarily unavailable (HTTP '+str(exc.code)+'). Please retry shortly.'
+        else:message='Ollama rejected the request (HTTP '+str(exc.code)+'). Check that both the chat and embedding models are downloaded.'
+        raise ChatError(message,503) from None
+    except Exception:
+        logging.getLogger(__name__).warning('Model connection failed: provider=%s',c['provider'])
+        raise ChatError('Could not reach the model service. Check server connectivity and provider availability, then retry.',503) from None
 
 def embed(texts,c):
     if c['provider']=='openai':

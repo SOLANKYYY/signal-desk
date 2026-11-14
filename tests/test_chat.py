@@ -83,3 +83,14 @@ class EmbeddingTests(unittest.TestCase):
   with patch.object(chat,'remote',return_value={'embeddings':[[3,4]]}):self.assertEqual(chat.embed(['x'],c),[[.6,.8]])
   with patch.object(chat,'remote',return_value={'embeddings':[[3,4,5]]}):
    with self.assertRaises(chat.ChatError):chat.embed(['x'],c)
+
+class ProviderErrorTests(unittest.TestCase):
+ def error(self,status,code):
+  import io,urllib.error
+  response=io.BytesIO(json.dumps({'error':{'code':code,'message':'secret-provider-text'}}).encode())
+  return urllib.error.HTTPError('https://api.openai.com/v1/embeddings',status,'Rejected',{},response)
+ def test_provider_errors_are_specific_and_do_not_leak_bodies(self):
+  for status,code,expected in [(429,'insufficient_quota','quota'),(401,'invalid_api_key','rejected the API key'),(403,'permission_denied','permissions'),(429,'rate_limit_exceeded','rate limit'),(404,'model_not_found','model was not found')]:
+   with self.subTest(status=status,code=code),patch.dict(os.environ,{'OPENAI_API_KEY':'not-a-real-key'}),patch('urllib.request.urlopen',side_effect=self.error(status,code)):
+    with self.assertRaises(chat.ChatError) as error:chat.remote('/embeddings',{}, {'provider':'openai'})
+    self.assertIn(expected,str(error.exception));self.assertNotIn('secret-provider-text',str(error.exception))
