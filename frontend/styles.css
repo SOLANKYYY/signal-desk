@@ -46,3 +46,7 @@
  body.exercise9-active .ex9-submission input,body.exercise9-active .ex9-submission textarea,body.exercise9-active .ex9-submission label,body.exercise9-active .ex9-submission>p{display:none}
  body.exercise9-active .ex9-print-only{display:block}body.exercise9-active .replica-timeline li{break-inside:avoid}body.exercise9-active #ex9-partition{break-before:page}
 }
+
+/* Shared Signal Desk identity for the earlier laboratory workspace. */
+:root{--ink:#14223b;--muted:#61728c;--accent:#79dbed;--green:#086e91;--line:#d4dfed;--paper:#f0f4fa;--white:#fff}
+.sidebar{background:#0b1120}.sidebar .brandmark{background:#79dbed;color:#10293a}.sidebar nav button.active{background:#1c3049;color:#9ae5f3}.sidebar nav button:hover{background:#17263d}.workspace-return{display:block;margin:18px 0 5px;padding:12px;border:1px solid #36516d;border-radius:8px;color:#9ae5f3;font-size:12px}.workspace-return:hover{background:#17263d}.sidebar{overflow-y:auto}.panel{box-shadow:0 5px 20px #152b4708}

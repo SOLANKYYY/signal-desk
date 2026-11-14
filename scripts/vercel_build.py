@@ -3,5 +3,5 @@ from pathlib import Path
 from shutil import copy2
 root=Path(__file__).resolve().parents[1]
 (root/'public').mkdir(exist_ok=True)
-for name in ('app.js','styles.css','intel.js','intel.css','replica-lab.js','exercise9.js'):copy2(root/'frontend'/name,root/'public'/name)
+for name in ('app.js','styles.css','intel.js','intel.css','dashboard.css','coursework.js','replica-lab.js','exercise9.js'):copy2(root/'frontend'/name,root/'public'/name)
 print('Static assets prepared.')

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from .db import db, client, ROOT, indexes
 from .core import VERDICTS, CATEGORIES, now
 from .ingest import seed
-from . import replica_lab, exercise9, intelligence
+from . import replica_lab, exercise9, intelligence, coursework
 from .alerts import processor, alert_list, LEVELS, analyze_report
 from .investigation import (search_query, entity_profiles, related_profile, index_pdf, evidence_search,
                             migrate_entities, labels, entities_for)
@@ -48,6 +48,9 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:self.send_json({'error':str(e)},503)
     def get(self):
         u=urlparse(self.path);q={k:v[0] for k,v in parse_qs(u.query).items()};path=u.path
+        if path=='/api/coursework':return self.send_json(coursework.catalog(db))
+        if path.startswith('/api/coursework/export/'):
+            return self.send_json(coursework.export_evidence(db,int(path.split('/')[-1])))
         if path.startswith('/api/intel/'):
             return self.send_json(intelligence.get(path[len('/api/intel/'):],q))
         if path=='/api/exercise9/kit':
@@ -138,7 +141,7 @@ class Handler(BaseHTTPRequestHandler):
                 file=ROOT/'results'/name
                 if file.exists():result[name]=json.loads(file.read_text())
             return self.send_json(result)
-        files={'/':'intel.html','/laboratory':'index.html','/intel.js':'intel.js','/intel.css':'intel.css','/app.js':'app.js','/styles.css':'styles.css','/replica-lab.js':'replica-lab.js','/exercise9.js':'exercise9.js'}
+        files={'/':'intel.html','/laboratory':'index.html','/intel.js':'intel.js','/intel.css':'intel.css','/dashboard.css':'dashboard.css','/coursework.js':'coursework.js','/app.js':'app.js','/styles.css':'styles.css','/replica-lab.js':'replica-lab.js','/exercise9.js':'exercise9.js'}
         if path not in files:return self.send_json({'error':'Not found'},404)
         file=ROOT/'frontend'/files[path];data=file.read_bytes()
         mime={'.html':'text/html','.js':'text/javascript','.css':'text/css'}[file.suffix]
@@ -153,12 +156,13 @@ class Handler(BaseHTTPRequestHandler):
             if origin and urlparse(origin).netloc!=self.headers.get('Host'):
                 return self.send_json({'error':'Cross-origin write blocked'},403)
             path=urlparse(self.path).path
-            limit=replica_lab.MAX_UPLOAD if path in ('/api/replica-lab/import','/api/exercise9/import') else 10000
+            limit=replica_lab.MAX_UPLOAD if path in ('/api/replica-lab/import','/api/exercise9/import','/api/coursework/import') else 10000
             length=int(self.headers.get('Content-Length','0'))
             if not 0<=length<=limit:return self.send_json({'error':'Request too large'},413)
             body=json.loads(self.rfile.read(length) or b'{}')
             if not isinstance(body,dict):raise ValueError('JSON object required')
             path=urlparse(self.path).path
+            if path=='/api/coursework/import':return self.send_json(coursework.import_evidence(db,body),201)
             if path.startswith('/api/intel/'):
                 return self.send_json(intelligence.post(path[len('/api/intel/'):],body))
             if path=='/api/exercise9/import':return self.send_json(exercise9.import_run(db,body),201)

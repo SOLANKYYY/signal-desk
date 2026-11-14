@@ -21,6 +21,18 @@ class CloudTests(unittest.TestCase):
         self.store.import_state.insert_one({'_id':'cloud-schema','version':1})
         self.api=web.app.test_client()
         self.auth={'Authorization':'Basic '+base64.b64encode(b'admin:test-password-long-enough').decode()}
+    def test_coursework_auth_import_and_export(self):
+        self.assertEqual(self.api.get('/api/coursework').status_code,401)
+        self.assertEqual(len(self.api.get('/api/coursework',headers=self.auth).get_json()['items']),8)
+        body={'experiment':11,'documents':[{'filename':'evidence.json','data':{'experiment':11,'passed':True}}]}
+        r=self.api.post('/api/coursework/import',headers=self.auth,json=body)
+        self.assertEqual(r.status_code,201)
+        self.assertEqual(self.api.get('/api/coursework/export/11',headers=self.auth).status_code,200)
+        h=dict(self.auth,Origin='https://attacker.invalid')
+        self.assertEqual(self.api.post('/api/coursework/import',headers=h,json=body).status_code,403)
+        self.assertEqual(self.api.get('/coursework.js',headers=self.auth).status_code,200)
+        self.assertEqual(self.api.get('/dashboard.css',headers=self.auth).status_code,200)
+
     def test_intelligence_routes_and_lab_preserved(self):
         self.assertEqual(self.api.get('/api/intel/summary').status_code,401)
         response=self.api.get('/api/intel/summary',headers=self.auth)
