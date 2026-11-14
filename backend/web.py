@@ -1,7 +1,8 @@
 """Password-protected WSGI adapter for Vercel; local server remains unchanged."""
-import hmac, io, json, os
+import hmac, io, json, os, hashlib
 from urllib.parse import urlparse
-from flask import Flask, request, Response
+from flask import Flask, request, Response, redirect
+from itsdangerous import URLSafeTimedSerializer, BadSignature
 from .db import db, ROOT, client
 from .server import Handler, encode
 from . import cloud, exercise9, coursework
@@ -16,22 +17,53 @@ def respond(data,status=200):
 def too_large(error):
     return respond({'error':'Request too large'},413)
 
+SESSION_SECONDS=7*24*60*60
+COOKIE='signal_desk_session'
+def signer():
+    key=hashlib.sha256(('signal-desk-login:'+os.getenv('APP_PASSWORD','')).encode()).digest()
+    return URLSafeTimedSerializer(key,salt='remember-browser-v1')
+
+def session_valid(username):
+    try:return signer().loads(request.cookies.get(COOKIE,''),max_age=SESSION_SECONDS).get('user')==username
+    except (BadSignature,AttributeError):return False
+
 @app.before_request
 def authorize():
+    if request.path in ('/intel.css','/dashboard.css') and request.method=='GET':return
     if request.path=='/api/cron':
         secret=os.getenv('CRON_SECRET','')
         if len(secret)>=32 and hmac.compare_digest(request.headers.get('Authorization',''),'Bearer '+secret):return
         return respond({'error':'Unauthorized cron request'},401)
     password=os.getenv('APP_PASSWORD','');username=os.getenv('APP_USERNAME','admin')
     if len(password)<16:return respond({'error':'Set APP_PASSWORD to at least 16 characters in Vercel, then redeploy.'},503)
-    auth=request.authorization
-    if not auth or auth.type!='basic' or not hmac.compare_digest((auth.username or '').encode(),username.encode()) or not hmac.compare_digest((auth.password or '').encode(),password.encode()):
-        return Response('Sign in to Signal Desk.',401,headers={'WWW-Authenticate':'Basic realm="Signal Desk", charset="UTF-8"','Cache-Control':'no-store'})
     if request.method=='POST':
+        origin=request.headers.get('Origin')
+        if (origin and urlparse(origin).netloc!=request.host) or request.headers.get('Sec-Fetch-Site')=='cross-site':return respond({'error':'Cross-origin write blocked'},403)
         limit=1024*1024 if request.path in ('/api/replica-lab/import','/api/exercise9/import','/api/coursework/import') else 10000
         if request.content_length is not None and request.content_length>limit:return respond({'error':'Request too large'},413)
-        origin=request.headers.get('Origin')
-        if origin and urlparse(origin).netloc!=request.host:return respond({'error':'Cross-origin write blocked'},403)
+    if request.path=='/login':return
+    auth=request.authorization
+    basic=bool(auth and auth.type=='basic' and hmac.compare_digest((auth.username or '').encode(),username.encode()) and hmac.compare_digest((auth.password or '').encode(),password.encode()))
+    if not basic and not session_valid(username):
+        if request.path.startswith('/api/') or request.method!='GET':return respond({'error':'Your session expired. Sign in again.','login':'/login'},401)
+        return redirect('/login',code=303)
+
+@app.route('/login',methods=['GET','POST'])
+def login():
+    if request.method=='GET':
+        html=(ROOT/'frontend/login.html').read_text()
+        html=html.replace('LOGIN_MESSAGE','Incorrect username or password. Please try again.' if request.args.get('error') else 'Use your existing Signal Desk credentials.')
+        return Response(html,mimetype='text/html',headers={'Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"})
+    username=os.getenv('APP_USERNAME','admin');password=os.getenv('APP_PASSWORD','')
+    if not hmac.compare_digest(request.form.get('username','').encode(),username.encode()) or not hmac.compare_digest(request.form.get('password','').encode(),password.encode()):return redirect('/login?error=1',code=303)
+    response=redirect('/',code=303)
+    response.set_cookie(COOKIE,signer().dumps({'user':username}),max_age=SESSION_SECONDS if request.form.get('remember')=='yes' else None,secure=bool(os.getenv('VERCEL')) or request.is_secure,httponly=True,samesite='Lax',path='/')
+    response.headers['Cache-Control']='no-store'
+    return response
+
+@app.route('/logout',methods=['POST'])
+def logout():
+    response=redirect('/login',code=303);response.delete_cookie(COOKIE,path='/');return response
 
 class Bridge(Handler):
     def __init__(self):

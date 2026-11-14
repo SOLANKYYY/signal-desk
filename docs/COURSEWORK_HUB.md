@@ -1,6 +1,6 @@
 # Signal Desk command center and coursework hub
 
-The main workspace combines threat intelligence, source evidence, investigation cases and an Experiments 11–18 hub at `/#labs`. Earlier report/replica/write-concern interfaces remain at `/laboratory`. The navy/cyan design supports dark and light modes and single-column mobile cards.
+The main workspace combines threat intelligence, source evidence, investigation cases and an Experiments 11–18 hub at `/#labs`. Earlier report/replica/write-concern interfaces remain at `/laboratory`. The blue-and-white workspace has a guided home page, a How to explore section, a conceptual database comparison, and single-column mobile cards. Experiment cards open detailed explanations of methods, outcomes and available evidence. Database comparisons explain tradeoffs; they do not invent performance measurements.
 
 Each experiment has its own Docker Hub repository link and reference chapter. The owner has reported completion. Until result JSON is imported, cards explicitly say **Completion reported**, not verified. Repository links are targets; this page does not claim a live registry check.
 
@@ -15,3 +15,9 @@ Uploads are authenticated by the existing app gate, restricted to same-origin wr
 ## Verification
 
 Unit and HTTP contract tests cover distinct repository links, import replacement scope, export, pass-label semantics, experiment mismatches, secret rejection, size limits, database outage fallback, authentication and cross-origin rejection. Existing tests cover threat APIs and earlier lab functions.
+
+## Hosted sign-in
+
+The Vercel app now uses a normal `/login` form instead of a browser Basic Authentication challenge. Use the same `APP_USERNAME` and `APP_PASSWORD` already configured in Vercel. Leave **Remember me for 7 days** selected to avoid signing in on every visit. Uncheck it for a session cookie, or use **Sign out** to clear this browser's cookie.
+
+Cookies are signed, HttpOnly, SameSite=Lax and Secure on Vercel. All sessions expire after seven days; rotating APP_PASSWORD invalidates existing cookies. No password is saved in the cookie. Existing Basic Authentication API clients remain compatible, but responses no longer send a WWW-Authenticate challenge. Database operations and evidence uploads remain authenticated. The standalone local server retains its existing behavior.

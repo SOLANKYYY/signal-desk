@@ -38,7 +38,7 @@ class CloudTests(unittest.TestCase):
         response=self.api.get('/api/intel/summary',headers=self.auth)
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.json['observations'],0)
-        self.assertIn(b'A clearer view of threats',self.api.get('/',headers=self.auth).data)
+        self.assertIn(b'A clearer view. A better decision.',self.api.get('/',headers=self.auth).data)
         self.assertIn(b'Replica Set Lab',self.api.get('/laboratory',headers=self.auth).data)
         self.assertEqual(self.api.get('/intel.js',headers=self.auth).status_code,200)
         self.assertEqual(self.api.get('/intel.css',headers=self.auth).status_code,200)
@@ -49,7 +49,7 @@ class CloudTests(unittest.TestCase):
     def report(self,i='r1'):
         self.store.reports.insert_one({'_id':i,'kind':'annual-report','title':'Test report','year':2026,'provenance':{'synthetic':False},'sourceId':'source','assessment':{'verdict':'needs-review'}})
     def test_auth_required_for_html_and_api_and_missing_password_fails_closed(self):
-        self.assertEqual(self.api.get('/').status_code,401)
+        self.assertEqual(self.api.get('/').status_code,303)
         self.assertEqual(self.api.get('/api/reports').status_code,401)
         self.assertEqual(self.api.get('/',headers=self.auth).status_code,200)
         with patch.dict(os.environ,{'APP_PASSWORD':''}):self.assertEqual(self.api.get('/').status_code,503)
