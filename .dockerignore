@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+**/.env
+**/.env.*
+**/__pycache__
+.venv
+node_modules
+.openai
+public
+results
+**/results
+**/*.zip
+**/*.log
+data/pdf-cache
+data/live-threats
+preview_dashboard.py

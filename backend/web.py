@@ -1,11 +1,11 @@
 """Password-protected WSGI adapter for Vercel; local server remains unchanged."""
 import hmac, io, json, os, hashlib
 from urllib.parse import urlparse
-from flask import Flask, request, Response, redirect
+from flask import Flask, request, Response, redirect, stream_with_context
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 from .db import db, ROOT, client
 from .server import Handler, encode
-from . import cloud, exercise9, coursework
+from . import cloud, exercise9, coursework, chat
 
 app=Flask(__name__,static_folder=None)
 app.config['MAX_CONTENT_LENGTH']=1024*1024
@@ -39,7 +39,7 @@ def authorize():
     if request.method=='POST':
         origin=request.headers.get('Origin')
         if (origin and urlparse(origin).netloc!=request.host) or request.headers.get('Sec-Fetch-Site')=='cross-site':return respond({'error':'Cross-origin write blocked'},403)
-        limit=1024*1024 if request.path in ('/api/replica-lab/import','/api/exercise9/import','/api/coursework/import') else 10000
+        limit=1024*1024 if request.path in ('/api/replica-lab/import','/api/exercise9/import','/api/coursework/import','/api/assistant/ingest') else 10000
         if request.content_length is not None and request.content_length>limit:return respond({'error':'Request too large'},413)
     if request.path=='/login':return
     auth=request.authorization
@@ -74,7 +74,7 @@ class Bridge(Handler):
 @app.route('/',methods=['GET'])
 @app.route('/<path:path>',methods=['GET','POST'])
 def route(path=''):
-    if request.method=='GET' and path in ('','laboratory','intel.js','intel.css','dashboard.css','coursework.js','app.js','styles.css','replica-lab.js','exercise9.js'):
+    if request.method=='GET' and path in ('','laboratory','intel.js','intel.css','dashboard.css','coursework.js','assistant.js','app.js','styles.css','replica-lab.js','exercise9.js'):
         name=('intel.html' if not path else 'index.html' if path=='laboratory' else path);mime='text/html' if path in ('','laboratory') else 'application/javascript' if path.endswith('.js') else 'text/css'
         return Response((ROOT/'frontend'/name).read_bytes(),mimetype=mime,headers={'Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'",'X-Content-Type-Options':'nosniff'})
     if request.method=='GET' and path=='api/exercise9/kit':
@@ -83,6 +83,19 @@ def route(path=''):
     if not path.startswith('api/'):return respond({'error':'Not found'},404)
     if not os.getenv('MONGODB_URI','').startswith(('mongodb://','mongodb+srv://')):return respond({'error':'Set the hosted MONGODB_URI environment variable and redeploy.'},503)
     try:
+        if path.startswith('api/assistant/'):
+            action=path.removeprefix('api/assistant/')
+            owner=os.getenv('APP_USERNAME','admin')
+            if request.method=='GET':return respond(chat.get(db,owner,action,request.args))
+            body=request.get_json(silent=True)
+            if not isinstance(body,dict):return respond({'error':'JSON object required'},400)
+            if action=='chat':
+                def events():
+                    for event in chat.chat_stream(db,owner,body):yield json.dumps(event,default=encode)+'\n'
+                return Response(stream_with_context(events()),mimetype='application/x-ndjson',headers={'Cache-Control':'no-store','X-Accel-Buffering':'no'})
+            if action=='ingest':return respond(chat.ingest(db,owner,body))
+            if action=='import-feed':return respond(chat.import_feed(db,owner,body))
+            return respond({'error':'Unknown assistant action'},404)
         cloud.bootstrap()
         if path=='api/health':
             client.admin.command('ping')
@@ -111,6 +124,7 @@ def route(path=''):
         # Keep internal DB/connection details out of public error responses.
         if bridge.response and bridge.response.status_code>=500:return respond({'error':'Backend operation failed. Check database access and Vercel logs.'},503)
         return bridge.response or respond({'error':'Not found'},404)
+    except chat.ChatError as exc:return respond({'error':str(exc)},exc.status)
     except (ValueError,TypeError) as exc:return respond({'error':str(exc)},400)
     except Exception:
         app.logger.exception('Signal Desk cloud operation failed')

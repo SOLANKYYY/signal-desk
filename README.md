@@ -1,3 +1,9 @@
+## Final assessment: Threat Assistant
+
+Open **Threat Assistant** in the sidebar (`/#assistant`) for evidence-grounded, streaming chat with MongoDB conversation memory. Supports OpenAI or local Ollama, real embeddings, platform/lifecycle filters and original source citations. Read [the final-assessment setup, requirements map and submission checklist](docs/FINAL_ASSESSMENT.md). The local full stack starts with `appendix-a/START.ps1`.
+
+Model credentials or local model downloads are required before a live AI demonstration. The assignment requires a **private GitHub repository**, which must be verified separately from the deployed website.
+
 ## Updated threat dashboard
 
 The root page now has the public-feed intelligence dashboard. Existing coursework and report tools are at `/laboratory`. See [setup, provenance and feature scope](docs/THREAT_DASHBOARD.md). First feed sync imports the bundled 15,000 real indicator observations.
@@ -19,7 +25,7 @@ Signal Desk brings public report metadata, extracted passages, provisional threa
 - **Threat attention levels:** Critical, High, Medium, Low, and Not assessed, with supporting rule excerpts. High and critical ratings create alerts that analysts can acknowledge or reopen.
 - **Analyst review:** save a category, verdict, and reasoning note, with recent review history retained separately from automatic ratings.
 - **Source visibility:** inspect provenance, linked indicators, source status, and update outcomes.
-- **Usable interface:** dark/light themes and JSON export of the current results page.
+- **Usable interface:** blue-and-white workspace, guided navigation, database comparisons and JSON exports.
 - **Database analysis:** inspect BSON sizes and compare a referenced model with an embedded-source alternative. Local tools also provide synthetic workloads and real WiredTiger cache measurements.
 
 ### How to interpret ratings
