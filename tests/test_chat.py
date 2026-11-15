@@ -111,8 +111,8 @@ class GeminiTests(unittest.TestCase):
   import io
   c={'provider':'gemini','embedding':'gemini-embedding-001','dimensions':2,'model':'gemini-2.5-flash-lite'}
   with patch.object(chat,'remote',return_value={'data':[{'index':0,'embedding':[3,4]}]}):self.assertEqual(chat.embed(['text'],c),[[.6,.8]])
-  with patch.object(chat,'remote',return_value={'choices':[{'message':{'content':'Cited [1]'}}]}) as request:
-   self.assertEqual(list(chat.model_stream([],c)),[{'token':'Cited [1]'}]);self.assertEqual(request.call_args.args[1]['reasoning_effort'],'none')
+  with patch.object(chat,'remote',return_value={'candidates':[{'content':{'parts':[{'text':'Cited [1]'}]}}]}) as request:
+   self.assertEqual(list(chat.model_stream([],c)),[{'token':'Cited [1]'},{'usage':{'prompt_tokens':0,'completion_tokens':0}}]);self.assertEqual(request.call_args.args[1]['generationConfig']['thinkingConfig']['thinkingBudget'],0)
  def test_quota_error_has_no_secret_or_paid_fallback(self):
   import io,urllib.error
   error=urllib.error.HTTPError('https://example.invalid',429,'quota',{},io.BytesIO(b'{"error":{"message":"private-key"}}'))
@@ -137,9 +137,26 @@ class GeminiMissingIndexTests(unittest.TestCase):
 class GeminiAnswerTests(unittest.TestCase):
  def test_complete_answer_and_usage(self):
   c={'provider':'gemini','model':'gemini-2.5-flash-lite'}
-  with patch.object(chat,'remote',return_value={'choices':[{'message':{'content':'Evidence [1]'}}],'usage':{'completion_tokens':4}}) as call:
-   self.assertEqual(list(chat.model_stream([],c)),[{'token':'Evidence [1]'},{'usage':{'completion_tokens':4}}])
-   self.assertFalse(call.call_args.args[1]['stream'])
+  with patch.object(chat,'remote',return_value={'candidates':[{'content':{'parts':[{'text':'Evidence [1]'}]}}],'usageMetadata':{'candidatesTokenCount':4}}) as call:
+   self.assertEqual(list(chat.model_stream([],c)),[{'token':'Evidence [1]'},{'usage':{'prompt_tokens':0,'completion_tokens':4}}])
+   self.assertEqual(call.call_args.args[0],'/models/gemini-2.5-flash-lite:generateContent')
  def test_empty_answer_is_not_success(self):
   with patch.object(chat,'remote',return_value={'choices':[]}):
    with self.assertRaisesRegex(chat.ChatError,'no answer'):list(chat.model_stream([],{'provider':'gemini','model':'gemini-2.5-flash-lite'}))
+
+class GeminiNativeTransportTests(unittest.TestCase):
+ def test_native_url_and_key_header(self):
+  import io
+  with patch.dict(os.environ,{'GEMINI_API_KEY':'test-native'}),patch.object(chat.urllib.request,'urlopen',return_value=io.BytesIO(b'{}')) as call:
+   chat.remote('/models/gemini-2.5-flash-lite:generateContent',{}, {'provider':'gemini'})
+   req=call.call_args.args[0]
+   self.assertEqual(req.full_url,'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent')
+   self.assertEqual(req.get_header('X-goog-api-key'),'test-native')
+   self.assertIsNone(req.get_header('Authorization'))
+ def test_system_and_history_mapping(self):
+  messages=[{'role':'system','content':'Cite sources.'},{'role':'user','content':'First'},{'role':'assistant','content':'Previous'},{'role':'user','content':'Follow-up'}]
+  with patch.object(chat,'remote',return_value={'candidates':[{'content':{'parts':[{'text':'Done'}]}}]}) as call:
+   list(chat.model_stream(messages,{'provider':'gemini','model':'gemini-2.5-flash-lite'}))
+   payload=call.call_args.args[1]
+   self.assertEqual([m['role'] for m in payload['contents']],['user','model','user'])
+   self.assertEqual(payload['systemInstruction']['parts'][0]['text'],'Cite sources.')

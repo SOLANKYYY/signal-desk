@@ -25,9 +25,13 @@ def config():
 
 def remote(path,payload,c,stream=False):
     base='https://api.openai.com/v1' if c['provider']=='openai' else 'https://generativelanguage.googleapis.com/v1beta/openai' if c['provider']=='gemini' else os.getenv('OLLAMA_BASE_URL','http://localhost:11434').rstrip('/')
+    native=c['provider']=='gemini' and path.startswith('/models/')
+    if native:base='https://generativelanguage.googleapis.com/v1beta'
     headers={'Content-Type':'application/json'}
     if c['provider']=='openai':headers['Authorization']='Bearer '+os.environ['OPENAI_API_KEY']
-    if c['provider']=='gemini':headers['Authorization']='Bearer '+os.environ['GEMINI_API_KEY']
+    if c['provider']=='gemini':
+        if native:headers['x-goog-api-key']=os.environ['GEMINI_API_KEY']
+        else:headers['Authorization']='Bearer '+os.environ['GEMINI_API_KEY']
     try:
         response=urllib.request.urlopen(urllib.request.Request(base+path,data=json.dumps(payload).encode(),headers=headers),timeout=90)
         if stream:return response
@@ -173,21 +177,25 @@ SYSTEM='''You are Signal Desk, a defensive threat intelligence research assistan
 
 def model_stream(messages,c):
     if c['provider']=='gemini':
-        # Use one complete provider response; retain the app's NDJSON event contract.
-        payload={'model':c['model'],'messages':messages,'max_tokens':1200,'stream':False}
-        if c['model'].startswith('gemini-2.5-'):payload['reasoning_effort']='none'
-        out=remote('/chat/completions',payload,c)
-        choices=out.get('choices') or []
-        choice=choices[0] if choices else {}
-        message=choice.get('message') or {}
-        answer=message.get('content')
-        if not isinstance(answer,str) or not answer.strip():
-            reason=choice.get('finish_reason')
-            category=reason if reason in ('stop','length','content_filter') else 'empty'
+        if not re.fullmatch(r'[a-zA-Z0-9._-]+',c['model']):raise ChatError('Invalid Gemini model configuration.',503)
+        contents=[{'role':'model' if m['role']=='assistant' else 'user','parts':[{'text':m['content']}]} for m in messages if m['role']!='system']
+        settings={'maxOutputTokens':1200}
+        if c['model'].startswith('gemini-2.5-'):settings['thinkingConfig']={'thinkingBudget':0}
+        payload={'contents':contents,'generationConfig':settings}
+        system='\n'.join(m['content'] for m in messages if m['role']=='system')
+        if system:payload['systemInstruction']={'parts':[{'text':system}]}
+        out=remote('/models/'+c['model']+':generateContent',payload,c)
+        candidates=out.get('candidates') or []
+        candidate=candidates[0] if candidates else {}
+        answer=''.join(p.get('text','') for p in (candidate.get('content') or {}).get('parts',[]) if not p.get('thought'))
+        if not answer.strip():
+            reason=candidate.get('finishReason')
+            category=reason if reason in ('STOP','MAX_TOKENS','SAFETY') else 'empty'
             logging.getLogger(__name__).warning('Gemini returned no answer: category=%s',category)
             raise ChatError('Gemini returned no answer. Try a shorter, specific question about the selected report.',502)
         yield {'token':answer}
-        if isinstance(out.get('usage'),dict):yield {'usage':out['usage']}
+        usage=out.get('usageMetadata') or {}
+        yield {'usage':{'prompt_tokens':usage.get('promptTokenCount',0),'completion_tokens':usage.get('candidatesTokenCount',0)}}
         return
     if c['provider'] in ('openai','gemini'):path='/chat/completions';payload={'model':c['model'],'messages':messages,'max_tokens':800,'stream':True,'stream_options':{'include_usage':True}}
     else:path='/api/chat';payload={'model':c['model'],'messages':messages,'stream':True,'options':{'num_predict':800}}
