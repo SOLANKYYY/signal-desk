@@ -20,7 +20,7 @@ The interface supports Windows, Linux, macOS, Android and iOS, plus unknown/all.
 
 | Assignment item | Implementation | Verification boundary |
 | --- | --- | --- |
-| A.1 LLM or SLM | OpenAI hosted API or local Ollama; streamed provider output | Real model run requires a configured provider |
+| A.1 LLM or SLM | Gemini native hosted API, optional OpenAI, or local Ollama; app-level NDJSON events | Real model run requires a configured provider |
 | A.2 Chunk, embed, store | 200-word chunks, 40-word overlap, real embeddings, idempotent source replacement | Provider calls isolated in unit tests; no fabricated vectors in runtime |
 | A.3 RAG API | Authenticated `/api/assistant/chat` on Vercel; Docker FastAPI `/chat` and `/ingest` plus integrated UI | NDJSON stream: sources, token events, completion or error |
 | A.4 Conversation memory | `chat_turns` documents scoped to account and session UUID, last five exchanges | Shared app account is one user identity; no claim of separate visitor accounts |
@@ -36,27 +36,16 @@ The interface supports Windows, Linux, macOS, Android and iOS, plus unknown/all.
 4. MongoDB `chat_chunks` stores provenance, content, scope, model space and normalized embeddings.
 5. A question is embedded with the same model; platform, stage and embedding-space filters apply before retrieval.
 6. Retrieved chunks and the last five exchanges are passed to the LLM as untrusted context, with a defensive system instruction. No execution tools exist.
-7. Provider tokens stream to the browser. One complete question/answer pair and its citations are stored atomically in `chat_turns` only after successful generation. Failed partial output is not saved as a completed answer.
+7. Answer events are delivered to the browser. Gemini uses a complete native response; OpenAI and Ollama support provider streaming. One complete question/answer pair and its citations are stored atomically in `chat_turns` only after successful generation. Failed partial output is not saved as a completed answer.
 8. `chat_metrics` records latency, success/error and provider-reported token counts. The UI shows the last 24 hours; metrics expire after 30 days. Conversation and evidence records persist until explicitly managed by the owner.
 
 Additional collections: `chat_limits` uses atomic increments per account/minute with a TTL index; `chat_locks` prevents overlapping requests in the same conversation. Limits are 12 chat attempts and five ingestion batches per minute. Maximum question length is 2,000 characters. One batch accepts up to five documents and 40 chunks. Provider credentials stay in server environment variables.
 
 ## Option A: use the existing Vercel website
 
-In Vercel > Signal Desk > Settings > Environment Variables, configure:
+Use the current [Gemini configuration guide](GETTING_STARTED.md#online-gemini-configuration). It also documents optional OpenAI and local Ollama settings. Store keys privately in Vercel and redeploy after changes. Do not enable paid billing when a free-only setup is intended.
 
-| Variable | Value |
-| --- | --- |
-| `LLM_BACKEND` | `openai` |
-| `OPENAI_API_KEY` | Your own API key, entered privately in Vercel |
-| `OPENAI_MODEL` | `gpt-4o-mini` (default; may be overridden with a compatible Chat Completions model) |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` |
-| `EMBEDDING_DIMENSIONS` | `1536` |
-| `CHAT_RETRIEVAL` | `exact` initially, or `atlas` after creating the index below |
-
-Keep the existing APP_USERNAME, APP_PASSWORD, MONGODB_URI and MONGODB_DB. Redeploy after changing environment variables. Open Threat Assistant, add evidence, then ask a question. API usage can incur provider charges. Questions, selected evidence and the last five exchanges are sent to the configured provider; do not enter private incident data or secrets.
-
-No model key was available to the implementation agent. A configured status is not a successful live model test. A live end-to-end answer must still be demonstrated with your provider.
+Keep the existing APP_USERNAME, APP_PASSWORD, MONGODB_URI and MONGODB_DB. Questions, selected evidence and the last five exchanges are sent to the configured provider. Use public reports only. Saved credentials and model-list access do not prove a successful answer; follow the [live verification checklist](OPERATIONS.md).
 
 ### Atlas Vector Search
 
@@ -140,13 +129,13 @@ Set production environment variables and redeploy:
 ```text
 LLM_BACKEND=gemini
 GEMINI_API_KEY=<save privately in Vercel as a Secret>
-GEMINI_MODEL=gemini-2.5-flash-lite
+GEMINI_MODEL=gemini-3.1-flash-lite
 EMBEDDING_MODEL=gemini-embedding-001
 EMBEDDING_DIMENSIONS=3072
 CHAT_RETRIEVAL=exact
 ```
 
-The server uses Google's OpenAI-compatible embeddings and streaming chat endpoints. Credentials stay server-side. No automatic paid fallback exists. Free quotas may prevent requests until reset. Free-tier input/output may be used to improve Google products; use public threat reports only. Pricing and availability: https://ai.google.dev/gemini-api/docs/pricing .
+The server uses Google's OpenAI-compatible embeddings endpoint and native generateContent chat endpoint. Credentials stay server-side. No automatic paid fallback exists. Free quotas may prevent requests until reset. Free-tier input/output may be used to improve Google products; use public threat reports only. Pricing and availability: https://ai.google.dev/gemini-api/docs/pricing .
 
 Re-import events after changing embedding providers; vectors are isolated by provider, model and dimension. For Atlas search, the vector index must use 3072 dimensions for this model instead of the supplied 1536-dimension OpenAI example. Existing source records are not deleted.
 

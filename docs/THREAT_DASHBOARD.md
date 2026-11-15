@@ -4,7 +4,7 @@ The main page now opens the feed dashboard. The existing report processing, PDF 
 
 Implemented: CIRCL/Botvrij MISP ingestion, event search and publisher filters, original-source event details, recurring observable ranking, source coverage, browser-local SHA-256/file signature inspection, message cue checking against stored indicators, optional VirusTotal hash reputation, persisted case notes/status, and JSON/observable exports. All indicator values are rendered as escaped text.
 
-The friend's reference site is https://y-seven-nu-15.vercel.app/. This is an independent implementation of the observed workflow, not a copy of its private backend. It does not claim full parity: ThreatFox/OTX, arbitrary-file sandbox execution, archive inspection, IDS rule generation and LLM answers are not implemented. Existing PDF passage retrieval is available instead of fabricated AI answers. Optional reputation lookup requires `VIRUSTOTAL_API_KEY` in server environment; files are never submitted to it.
+The workspace integrates public-feed investigation and a separate evidence-grounded assistant. Chat, source imports and conversation memory are documented in [the architecture guide](ARCHITECTURE.md). ThreatFox/OTX integration, arbitrary-file sandbox execution, archive inspection, and IDS rule generation are not implemented. Optional reputation lookup requires `VIRUSTOTAL_API_KEY` in the server environment; files are never submitted to it.
 
 ## Ingest
 

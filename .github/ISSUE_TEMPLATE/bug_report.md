@@ -1,16 +1,13 @@
 ---
 name: Bug report
-about: Report unexpected behavior in Signal Desk
-title: "[Bug] "
-labels: ""
-assignees: ""
+about: Report a reproducible application problem
+labels: bug
 ---
-
 ## What happened?
 
-Describe the problem and the expected behavior.
+## Expected behavior
 
-## Reproduction
+## Steps to reproduce
 
 1.
 2.
@@ -18,17 +15,11 @@ Describe the problem and the expected behavior.
 
 ## Environment
 
-- Commit or version:
+- Page / feature:
+- Browser / OS:
 - Local or Vercel:
-- Operating system and browser:
-- Python version, if relevant:
+- Commit / deployment, if known:
 
 ## Evidence
 
-Add relevant error text or screenshots with credentials and private information removed.
-
-## Impact
-
-Which workflow is blocked? Is there a workaround?
-
-For security vulnerabilities, follow SECURITY.md instead of posting sensitive details here.
+Include the visible error and a redacted screenshot if useful. Never include API keys, database connection strings, passwords, or private report content. Report vulnerabilities using SECURITY.md.

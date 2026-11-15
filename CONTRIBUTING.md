@@ -4,7 +4,7 @@ Keep changes focused and explain the problem they solve. For a substantial featu
 
 ## Setup
 
-Follow the README to create a Python virtual environment and configure MongoDB. Install development dependencies:
+Follow [Getting started](docs/GETTING_STARTED.md) to create a Python virtual environment and configure a separate development MongoDB database. Install development dependencies:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
@@ -27,6 +27,8 @@ For behavior changes, run the relevant checks and the Python suite:
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
+
+Run `node tests/test_assistant_ui.cjs` for assistant interface changes. Keep `frontend/` as the source; never edit generated `public/` assets.
 
 For interface changes, check both narrow and wide layouts, keyboard interaction, loading states, and errors. Documentation-only changes require a review of commands and links rather than unrelated runtime tests.
 

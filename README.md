@@ -1,208 +1,150 @@
-## Final assessment: Threat Assistant
-
-Open **Threat Assistant** in the sidebar (`/#assistant`) for evidence-grounded, streaming chat with MongoDB conversation memory. Supports OpenAI or local Ollama, real embeddings, platform/lifecycle filters and original source citations. Read [the final-assessment setup, requirements map and submission checklist](docs/FINAL_ASSESSMENT.md). The local full stack starts with `appendix-a/START.ps1`.
-
-Model credentials or local model downloads are required before a live AI demonstration. The assignment requires a **private GitHub repository**, which must be verified separately from the deployed website.
-
-## Updated threat dashboard
-
-The root page now has the public-feed intelligence dashboard. Existing coursework and report tools are at `/laboratory`. See [setup, provenance and feature scope](docs/THREAT_DASHBOARD.md). First feed sync imports the bundled 15,000 real indicator observations.
-
 # Signal Desk
 
-**A cyber threat intelligence workspace for investigating security reports, searching PDF evidence, and recording analyst decisions.**
+**A threat intelligence workspace with source-backed investigation, AI-assisted analysis, and MongoDB database experiments.**
 
-Signal Desk brings public report metadata, extracted passages, provisional threat ratings, and review history into one browser interface. It uses Python and MongoDB, with a lightweight HTML, CSS, and JavaScript frontend.
+Signal Desk brings public threat reports, indicators, analyst notes, and an evidence-grounded chatbot into a blue-and-white browser workspace. Every report retains its source. AI answers use imported evidence, and database experiments keep measured results separate from conceptual explanations.
 
-[Features](#features) · [Quick start](#quick-start) · [Technology](#technology) · [Deployment](#deployment) · [Contributing](CONTRIBUTING.md)
+[Open the website](https://signal-desk-xi-seven.vercel.app/) · [Documentation](docs/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Setup](docs/GETTING_STARTED.md) · [Troubleshooting](docs/OPERATIONS.md)
 
-## Features
+> The hosted workspace requires the owner's application login. A deployed website or a saved API key does not prove that a model can generate answers. Provider access, quotas, and live completion must be verified separately.
 
+## Explore the workspace
 
-- **Intelligence catalog:** search reports, summaries, CVEs, indicators, analyst labels, and indexed PDF passages. Filter by publisher, date, year, report type, category, and verdict.
-- **PDF processing:** sequential download and text extraction with persistent progress, pause/resume, and explicit retry for failed publications.
-- **Evidence search:** inspect matching passages, page references, related reports, and entity/CVE profiles..
-- **Threat attention levels:** Critical, High, Medium, Low, and Not assessed, with supporting rule excerpts. High and critical ratings create alerts that analysts can acknowledge or reopen.
-- **Analyst review:** save a category, verdict, and reasoning note, with recent review history retained separately from automatic ratings.
-- **Source visibility:** inspect provenance, linked indicators, source status, and update outcomes.
-- **Usable interface:** blue-and-white workspace, guided navigation, database comparisons and JSON exports.
-- **Database analysis:** inspect BSON sizes and compare a referenced model with an embedded-source alternative. Local tools also provide synthetic workloads and real WiredTiger cache measurements.
+| Area | What you can do |
+| --- | --- |
+| **AI Chatbot** | Import public evidence, ask questions with citations, filter by platform/threat stage, and resume completed conversations |
+| **Threat explorer** | Search public feed events, inspect provenance and reported indicators, and export records |
+| **Shared indicators** | Explore recurring observables across source events without treating overlap as proof of an attack |
+| **File & message checks** | Inspect file hashes/signatures locally in the browser and compare message cues with stored indicators |
+| **Investigation notebook** | Record case notes, status, and analyst decisions |
+| **Database experiments** | Explore chapters 11–18 and import measured JSON evidence from separate Docker experiments |
+| **Compare databases** | Review MongoDB, Cassandra, and Neo4j tradeoffs; measured results remain explicitly labelled |
+| **Legacy laboratory** | Access PDF report processing, schema analysis, and chapter 8/9 evidence tools at `/laboratory` |
 
-### How to interpret ratings
+### Evidence-grounded chat
 
-Ratings are transparent, rule-based indicators of the attention a report's text may deserve. They are **not confirmed incident severity, CVSS scores, machine-learning predictions, or evidence that your device is affected**. A low rating does not establish safety.
+The **Evidence library appears above the chat**. Search and page through feed reports, select up to five per import, paste an advisory, or load a `.txt`/`.md` excerpt with its original HTTPS source URL. An uploaded excerpt is limited to 20,000 characters; text files are limited to 80 KB. PDFs are handled by the separate report-processing workflow, not this text uploader.
 
-Annual-report metadata alone remains **Not assessed**. Blocked, scanned, oversized, or unreadable PDFs may also remain unassessed. Clearly marked fictional scenarios are excluded from automatic alerts. Analyst verdicts and alert acknowledgements remain separate decisions.
+The server creates real embeddings, stores them in MongoDB, retrieves up to three matching passages, and supplies the last five completed exchanges to the model. Sources and analyst assessments remain visible. Incomplete answers are marked and are not stored as completed conversations.
 
-## Technology.
+| Provider | Chat integration | Embeddings | Deployment |
+| --- | --- | --- | --- |
+| **Gemini** | Native `generateContent` API | Google OpenAI-compatible embeddings API | Online on Vercel |
+| **OpenAI** | Chat Completions API | OpenAI embeddings API | Optional hosted provider; API credits required |
+| **Ollama** | Local chat API | Local embedding model | Bundled local Docker stack |
 
-| Area | Tools | Purpose |
-| --- | --- | --- |
-| Browser interface | HTML5, CSS3, JavaScript | Dashboard, filters, report views, and review controls |
-| Application | Python 3.12+, Flask | Cloud HTTP application and processing logic |
-| Local server | Python standard library | Local HTTP service and background processing |
-| Database | MongoDB, PyMongo | Reports, relationships, evidence, reviews, and processing state |
-| Connection support | dnspython | DNS support for MongoDB SRV connections |
-| PDF extraction | pypdf | Extract searchable text and page references |
-| Cloud execution | Vercel, Vercel Queues | Hosted application and queued processing |
-| Hosted database | MongoDB Atlas | MongoDB hosting for cloud deployment |
-| Testing | unittest, mongomock | Automated checks with isolated mock storage where appropriate |
-| Optional local database | Docker Compose | Start the bundled MongoDB service |
+The current hosted configuration targets `gemini-3.1-flash-lite` with `gemini-embedding-001` (3072 dimensions). Provider model names and quotas can change. Consult [Google's pricing](https://ai.google.dev/gemini-api/docs/pricing) and your API project's limits. Keep billing disabled if using only the free tier. There is **no automatic paid-provider fallback**. Free-tier Google content may be used to improve its products; use public evidence only.
 
-No Node.js build is required for the frontend. Exact Python dependency versions are recorded in `requirements.txt`; development dependencies are in `requirements-dev.txt`.
+## Architecture
 
-## Quick start
+```mermaid
+flowchart TD
+    UI[Browser workspace] --> API[Authenticated Flask API]
+    API --> DB[(MongoDB)]
+    API --> CHAT[Evidence retrieval and chat]
+    CHAT --> DB
+    CHAT --> MODEL[Configured model provider]
+    API --> QUEUE[Background processing queue]
+    QUEUE --> WORKER[Report and feed workers]
+    WORKER --> DB
+```
 
-You need **Python 3.12 or later**, Git, and a running MongoDB instance. Installing Python packages does not install MongoDB itself.
+The browser never receives provider API keys. The hosted app uses a shared application account with signed session cookies, not separate tenant identities. Local database experiments do not reconfigure the production database. Read the [architecture and storage guide](docs/ARCHITECTURE.md).
 
-### Windows PowerShell
+## Run the project
+
+### Option 1 — use the hosted workspace
+
+Open [Signal Desk](https://signal-desk-xi-seven.vercel.app/), sign in, and select **AI Chatbot**. Add a public source to the Evidence library, keep both filters on **All**, and ask a specific question about that source. Imported feed metadata provides limited context; add a fuller advisory excerpt for a deeper answer.
+
+### Option 2 — complete local Docker stack
+
+Requires Git, running Docker Desktop with Linux containers, and enough RAM/disk space for MongoDB and downloaded models.
 
 ```powershell
 git clone https://github.com/SOLANKYYY/signal-desk.git
 cd signal-desk
-py -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+powershell -NoProfile -ExecutionPolicy Bypass -File .\appendix-a\START.ps1
 ```
 
-If MongoDB already runs locally on port 27017, start the app:
+Open **http://localhost:8019/#assistant**. The username is `admin`; the script generates a password in the ignored `appendix-a/.env`. This starts the integrated UI, MongoDB, and Ollama. The first model downloads may take time and several GB of storage. No hosted model key is needed.
+
+### Option 3 — Python development
+
+Use Python **3.12** for parity with deployment. The root Compose file starts **MongoDB only**.
 
 ```powershell
-.\.venv\Scripts\python.exe -m backend.server
-```
-
-Alternatively, if Docker Desktop is installed and running, start the bundled database first:
-
-```powershell
+git clone https://github.com/SOLANKYYY/signal-desk.git
+cd signal-desk
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 docker compose up -d
-.\.venv\Scripts\python.exe -m backend.server
+$env:MONGODB_URI = "mongodb://127.0.0.1:27017"
+$env:MONGODB_DB = "signal_desk_dev"
+$env:APP_USERNAME = "admin"
+# Set APP_PASSWORD privately in this shell (at least 16 characters).
+.\.venv\Scripts\python.exe -m flask --app app run --host 127.0.0.1 --port 8000
 ```
 
-Open **http://localhost:8000**. Keep the terminal running; stop the server with **Ctrl+C**. Initial startup prepares the database and seeds the report catalog. Repeated startup preserves saved reviews.
-
-The commands call the virtual environment's Python directly, so activation is optional. If `py` is unavailable, use `python -m venv .venv`.
-
-### macOS / Linux
-
-```bash
-git clone https://github.com/SOLANKYYY/signal-desk.git
-cd signal-desk
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-# Optional, if using the bundled database and Docker is installed:
-# docker compose up -d
-.venv/bin/python -m backend.server
-```
-
-A reachable MongoDB instance is required before starting the app.
-
-### First investigation
-
-1. Open the alerts dashboard and inspect indexing progress, failed publications, and attention levels.
-2. Search the intelligence feed and open a report.
-3. Review its source, extracted evidence, and related entities.
-4. Record an analyst verdict and explanation.
-5. Acknowledge or reopen an alert as appropriate.
-
-Automatic PDF processing can use substantial bandwidth. Pause it in the dashboard when needed. PDFs are downloaded temporarily for extraction; the application stores extracted evidence rather than a permanent PDF archive.
+Open **http://localhost:8000**. Configure a model separately to use chat. For the older standalone report server, run `python -m backend.server`; it is a distinct local entrypoint. See [full setup and environment configuration](docs/GETTING_STARTED.md).
 
 ## Configuration
 
-Set environment variables in your shell for local use or in the Vercel project settings for cloud use. **The application does not automatically load `.env` files.**
+`.env.example` documents the settings but contains no working credentials. The Python app does **not** automatically load `.env` files; use shell variables or Vercel environment settings. Docker Compose uses its own `.env` handling.
 
-| Variable | Default / requirement | Purpose |
-| --- | --- | --- |
-| `MONGODB_URI` | Local default: `mongodb://127.0.0.1:27017` | Database connection; use your hosted URI on Vercel |
-| `MONGODB_DB` | `signal_desk` | Application database |
-| `PORT` | `8000` | Local HTTP port |
-| `APP_USERNAME` | Cloud default: `admin` | Hosted application login name |
-| `APP_PASSWORD` | Required for cloud; at least 16 characters | Hosted application password |
-| `CRON_SECRET` | Required for cloud; at least 32 characters | Scheduled-request authentication |
-| `AUTO_MONITOR` | `1` | Local monitoring and discovery toggle |
-| `AUTO_PROCESS_REPORTS` | `1` | Initial processing preference; saved pause/resume choices take precedence |
-| `SYNC_INTERVAL_SECONDS` | `300` | Local source update interval |
-| `CTI_FEED_URLS` | Empty | Optional comma-separated permitted HTTPS RSS/Atom feeds |
+| Setting | Purpose |
+| --- | --- |
+| `MONGODB_URI`, `MONGODB_DB` | Database connection and database name |
+| `APP_USERNAME`, `APP_PASSWORD` | Shared hosted app login; password minimum 16 characters |
+| `CRON_SECRET` | Scheduled task authentication; minimum 32 characters |
+| `LLM_BACKEND` | `gemini`, `openai`, or `ollama` |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Gemini server credential and chat model |
+| `OPENAI_API_KEY`, `OPENAI_MODEL` | Optional OpenAI configuration |
+| `EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS` | Must match the selected provider's embeddings |
+| `CHAT_RETRIEVAL` | `exact` or `atlas`; Atlas requires a compatible vector index |
 
-Example local settings:
+Changing the embedding provider/model/dimensions requires re-importing evidence. Changing only the chat model does not. Exact mode ranks at most 3,000 matching chunks in Python; it is not Atlas indexed Vector Search.
 
-```powershell
-$env:MONGODB_URI = "mongodb://127.0.0.1:27017"
-$env:MONGODB_DB = "signal_desk"
-.\.venv\Scripts\python.exe -m backend.server
-```
-
-Keep credentials, tokens, and private database exports out of Git. The website password and MongoDB database-user password serve different purposes.
-
-## Deployment
-
-The repository includes a Flask entrypoint, Vercel configuration, a queue worker, and scheduled synchronization. Follow [the Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md) for account setup, secrets, Atlas permissions, networking, and verification.
-
-| Capability | Local server | Vercel deployment |
-| --- | --- | --- |
-| Catalog, search, evidence, reviews, and alerts | Available | Available after configuration |
-| Automatic PDF processing | Local background processor | Vercel Queues worker |
-| Source synchronization | Local polling / manual action | Scheduled / manual action |
-| Schema analysis | Available | Available |
-| Large synthetic workload and cache measurements | Local tools | Disabled |
-| Login | Local service; keep on your own machine | Single-user password gate |
-
-Cloud operation depends on Atlas connectivity, configured secrets, and queue availability. The password gate is not a multiuser identity or role-management system. Deployment success must be checked in your own environment.
-
-## Data sources and boundaries
-
-- [CTI Digest](https://ctidigest.com/): discovery from readable public content and permitted feeds. Blocked or JavaScript-only pages may not be ingestible; failures remain visible.
-- [Awesome Annual Security Reports](https://github.com/jacobdjwilson/awesome-annual-security-reports): catalog references to publisher reports.
-- Bundled fictional scenarios use reserved `.invalid` domains and are labelled as fictional.
-
-The initial catalog contains metadata references, not a pre-reviewed collection of PDFs. Counts change as sources are synchronized. Original reports remain the work of their publishers; links and extracted evidence do not imply endorsement. See [data provenance](data/PROVENANCE.md).
-
-The processor retrieves report PDFs; it does not download malware or contact addresses merely because they appear as indicators in a report.
-
-## Project structure
+## Repository map
 
 | Path | Responsibility |
 | --- | --- |
-| `frontend/` | Browser layout, styling, and interaction |
-| `backend/` | HTTP routes, ingestion, evidence extraction, alerts, database operations, and analysis tools |
-| `app.py` | Flask deployment entrypoint |
-| `worker.py` | Cloud queue subscriber |
-| `data/` | Seed metadata, provenance, and bundled BSON data |
-| `docs/` | Setup, operation, technical details, and validation notes |
-| `mongodb/` | Optional MongoDB helper scripts |
-| `scripts/` | Build helpers |
-| `tests/` | Automated Python checks |
-| `results/` | Locally generated analysis output |
-| `vercel.json`, `pyproject.toml` | Deployment and Python project configuration |
+| `frontend/` | Source HTML, CSS, and browser JavaScript |
+| `backend/` | Authentication, APIs, intelligence, evidence, chat, investigations, and lab imports |
+| `app.py` / `worker.py` | Hosted web entrypoint / queue worker |
+| `appendix-a/` | Local integrated AI stack, PowerShell launcher, Dockerfile, vector-index example |
+| `labs/chapter08/`, `labs/chapter09/` | Earlier standalone database lab kits |
+| `data/` | Bundled data and provenance; not private database exports |
+| `docs/` | Documentation index, setup, architecture, operations, and coursework guides |
+| `scripts/` | Static build and opt-in provider inventory helpers |
+| `tools/`, `mongodb/` | Data preparation and database utilities |
+| `tests/` | Python and JavaScript regression tests |
+| `.github/` | Contribution templates |
+| `results/`, `validation-results/` | Local output / historical validation assets; not proof of current production health |
+| `public/` | Generated static assets; ignored by Git, never edit as source |
 
-## Development and testing
+Chapters 11–18 are integrated through the coursework hub; their separate submission kits are not all stored in this repository. See [coursework evidence semantics](docs/COURSEWORK_HUB.md).
+
+## Verification
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+node tests/test_assistant_ui.cjs
 ```
 
-The automated suite includes controlled downloads and mock database/queue operations. Passing it does not establish real Atlas connectivity, Vercel queue delivery, or performance. Validate those separately in the deployed environment.
+Node is only needed for the JavaScript test, not for building the frontend. Tests cover isolated application behavior with mock providers/databases. They do not certify live API credits, Atlas networking, Docker performance, or an end-to-end AI answer. Use the [live verification checklist](docs/OPERATIONS.md) before a demonstration.
 
-See [Contributing](CONTRIBUTING.md) and [the GitHub workflow](docs/GITHUB_WORKFLOW.md) for changes, commits, and pull requests.
+## Data, security, and limitations
 
-## Documentation
+- Bundled public feed data distinguishes **indicator observations** from **events** and **incidents**. The 15,000-observation snapshot does not represent 15,000 confirmed attacks.
+- Report titles and dates do not establish that a device is infected or a threat is resolved. Imported feed records default to unknown platform and unassessed stage.
+- Ratings are rule-based review aids, not CVSS scores, malware verdicts, or guarantees of safety.
+- The assistant cannot scan or modify your device. It does not execute instructions found in source text.
+- Files are not uploaded for malware execution. Optional VirusTotal lookup uses hashes, not submitted files.
+- Never commit keys, `.env` files, passwords, private incident data, or TLS private keys. See [Security](SECURITY.md) and [data provenance](data/PROVENANCE.md).
 
-- [User guide](docs/USER_GUIDE.md)
-- [Technical guide](docs/TECHNICAL_GUIDE.md)
-- [Vercel deployment](docs/VERCEL_DEPLOYMENT.md)
-- [Validation history](docs/TESTING.md)
-- [GitHub setup and update commands](docs/GITHUB_WORKFLOW.md)
-- [Security guidance](SECURITY.md)
+## Documentation and contributing
 
-## Maintainer
+Start with the [documentation index](docs/README.md). For changes, read [Contributing](CONTRIBUTING.md), use a focused branch, and include relevant verification in your pull request.
 
-Maintained by [SOLANKYYY](https://github.com/SOLANKYYY).
-
-## Chapter 8 Replica Set Lab
-
-Open **Replica Set Lab** in the sidebar to upload your Docker experiment JSON files and explore recorded replication, arbiter, failover, and election evidence. Runs locally and on the authenticated Vercel site. This page shows saved results, not live container status. See [setup and upload instructions](labs/chapter08/README.md).
-
-### Exercise 9: write concern and network partitions
-
-The **Exercise 9 · Write concern** page offers a downloadable Docker kit, imports its two measured JSON outputs, and shows six 1,000-write benchmarks, journal comparisons, partition write outcomes, election states, and catch-up evidence. A printable report includes the student's Docker Hub URL and explanation. See [the kit guide](labs/chapter09/README.md) for local Windows commands and Docker Hub submission/demo steps.
-
-The isolated three-node kit uses no host ports and no arbiter. The hosted application only validates and stores the latest result per activity in `exercise9_runs`; it never runs Docker or reconfigures the production database. Exercise 8 uploads remain separate. `w:3` implements all three data-bearing nodes, since MongoDB has no built-in `w:"all"` mode. No measurements are preloaded.
+Maintained by [SOLANKYYY](https://github.com/SOLANKYYY). Coursework references and submission requirements are recorded in [Final assessment](docs/FINAL_ASSESSMENT.md). Repository visibility and faculty access must be managed separately; deploying the website does not make a repository private.
