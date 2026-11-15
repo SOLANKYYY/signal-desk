@@ -63,7 +63,17 @@ def remote(path,payload,c,stream=False):
 def embed(texts,c):
     if c['provider'] in ('openai','gemini'):
         out=remote('/embeddings',{'model':c['embedding'],'input':texts},c)
-        vectors=[d['embedding'] for d in sorted(out['data'],key=lambda d:d['index'])]
+        rows=out.get('data',[])
+        # Gemini's compatibility response may omit the zero-valued index.
+        # Validate the complete permutation before assigning vectors to sources.
+        if not isinstance(rows,list) or any(not isinstance(d,dict) for d in rows):
+            raise ChatError('Embedding provider returned an invalid batch.',502)
+        positions=[d.get('index',0 if c['provider']=='gemini' else None) for d in rows]
+        if any(type(i) is not int for i in positions) or sorted(positions)!=list(range(len(texts))):
+            raise ChatError('Embedding provider returned ambiguous batch ordering. Retry with one source.',502)
+        if any(not isinstance(d.get('embedding'),list) for d in rows):
+            raise ChatError('Embedding provider returned an invalid vector.',502)
+        vectors=[d['embedding'] for _,d in sorted(zip(positions,rows),key=lambda pair:pair[0])]
     else:vectors=remote('/api/embed',{'model':c['embedding'],'input':texts,'truncate':False},c)['embeddings']
     if len(vectors)!=len(texts):raise ChatError('Embedding provider returned an incomplete batch.',502)
     normalized=[]
