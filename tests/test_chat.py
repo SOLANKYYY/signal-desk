@@ -111,7 +111,7 @@ class GeminiTests(unittest.TestCase):
   import io
   c={'provider':'gemini','embedding':'gemini-embedding-001','dimensions':2,'model':'gemini-2.5-flash-lite'}
   with patch.object(chat,'remote',return_value={'data':[{'index':0,'embedding':[3,4]}]}):self.assertEqual(chat.embed(['text'],c),[[.6,.8]])
-  with patch.object(chat,'remote',return_value=io.BytesIO(b'data: {"choices":[{"delta":{"content":"Cited [1]"}}]}\n\ndata: [DONE]\n')) as request:
+  with patch.object(chat,'remote',return_value={'choices':[{'message':{'content':'Cited [1]'}}]}) as request:
    self.assertEqual(list(chat.model_stream([],c)),[{'token':'Cited [1]'}]);self.assertEqual(request.call_args.args[1]['reasoning_effort'],'none')
  def test_quota_error_has_no_secret_or_paid_fallback(self):
   import io,urllib.error
@@ -119,3 +119,27 @@ class GeminiTests(unittest.TestCase):
   with patch.dict(os.environ,{'GEMINI_API_KEY':'test'}), patch.object(chat.urllib.request,'urlopen',side_effect=error):
    with self.assertRaises(chat.ChatError) as raised:chat.remote('/embeddings',{}, {'provider':'gemini'})
    self.assertIn('no paid fallback',str(raised.exception));self.assertNotIn('private-key',str(raised.exception))
+
+class GeminiMissingIndexTests(unittest.TestCase):
+ def test_omitted_zero_index(self):
+  c={'provider':'gemini','embedding':'gemini-embedding-001','dimensions':2}
+  with patch.object(chat,'remote',return_value={'data':[{'embedding':[3,4]}]}):
+   self.assertEqual(chat.embed(['source'],c),[[.6,.8]])
+ def test_omitted_zero_and_out_of_order_batch(self):
+  c={'provider':'gemini','embedding':'gemini-embedding-001','dimensions':2}
+  with patch.object(chat,'remote',return_value={'data':[{'index':1,'embedding':[0,1]},{'embedding':[1,0]}]}):
+   self.assertEqual(chat.embed(['a','b'],c),[[1,0],[0,1]])
+ def test_ambiguous_batch_rejected(self):
+  c={'provider':'gemini','embedding':'gemini-embedding-001','dimensions':2}
+  with patch.object(chat,'remote',return_value={'data':[{'embedding':[0,1]},{'embedding':[1,0]}]}):
+   with self.assertRaisesRegex(chat.ChatError,'ambiguous'):chat.embed(['a','b'],c)
+
+class GeminiAnswerTests(unittest.TestCase):
+ def test_complete_answer_and_usage(self):
+  c={'provider':'gemini','model':'gemini-2.5-flash-lite'}
+  with patch.object(chat,'remote',return_value={'choices':[{'message':{'content':'Evidence [1]'}}],'usage':{'completion_tokens':4}}) as call:
+   self.assertEqual(list(chat.model_stream([],c)),[{'token':'Evidence [1]'},{'usage':{'completion_tokens':4}}])
+   self.assertFalse(call.call_args.args[1]['stream'])
+ def test_empty_answer_is_not_success(self):
+  with patch.object(chat,'remote',return_value={'choices':[]}):
+   with self.assertRaisesRegex(chat.ChatError,'no answer'):list(chat.model_stream([],{'provider':'gemini','model':'gemini-2.5-flash-lite'}))
