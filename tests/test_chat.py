@@ -94,3 +94,28 @@ class ProviderErrorTests(unittest.TestCase):
    with self.subTest(status=status,code=code),patch.dict(os.environ,{'OPENAI_API_KEY':'not-a-real-key'}),patch('urllib.request.urlopen',side_effect=self.error(status,code)):
     with self.assertRaises(chat.ChatError) as error:chat.remote('/embeddings',{}, {'provider':'openai'})
     self.assertIn(expected,str(error.exception));self.assertNotIn('secret-provider-text',str(error.exception))
+
+class GeminiTests(unittest.TestCase):
+ def test_config_requires_gemini_key_without_openai_fallback(self):
+  with patch.dict(os.environ,{'LLM_BACKEND':'gemini','OPENAI_API_KEY':'unused'},clear=True):
+   with self.assertRaisesRegex(chat.ChatError,'GEMINI_API_KEY'):chat.config()
+ def test_defaults_and_provider_isolation(self):
+  with patch.dict(os.environ,{'LLM_BACKEND':'gemini','GEMINI_API_KEY':'test'},clear=True):
+   c=chat.config();self.assertEqual(c['dimensions'],3072);self.assertEqual(c['model'],'gemini-2.5-flash-lite');self.assertTrue(c['space'].startswith('gemini:'))
+ def test_google_endpoint_and_key(self):
+  import io
+  with patch.dict(os.environ,{'GEMINI_API_KEY':'test-gemini','OPENAI_API_KEY':'must-not-use'}), patch.object(chat.urllib.request,'urlopen',return_value=io.BytesIO(b'{"ok":true}')) as request:
+   self.assertEqual(chat.remote('/embeddings',{}, {'provider':'gemini'}),{'ok':True})
+   req=request.call_args.args[0];self.assertEqual(req.full_url,'https://generativelanguage.googleapis.com/v1beta/openai/embeddings');self.assertEqual(req.get_header('Authorization'),'Bearer test-gemini')
+ def test_embedding_and_stream_protocol(self):
+  import io
+  c={'provider':'gemini','embedding':'gemini-embedding-001','dimensions':2,'model':'gemini-2.5-flash-lite'}
+  with patch.object(chat,'remote',return_value={'data':[{'index':0,'embedding':[3,4]}]}):self.assertEqual(chat.embed(['text'],c),[[.6,.8]])
+  with patch.object(chat,'remote',return_value=io.BytesIO(b'data: {"choices":[{"delta":{"content":"Cited [1]"}}]}\n\ndata: [DONE]\n')) as request:
+   self.assertEqual(list(chat.model_stream([],c)),[{'token':'Cited [1]'}]);self.assertEqual(request.call_args.args[1]['reasoning_effort'],'none')
+ def test_quota_error_has_no_secret_or_paid_fallback(self):
+  import io,urllib.error
+  error=urllib.error.HTTPError('https://example.invalid',429,'quota',{},io.BytesIO(b'{"error":{"message":"private-key"}}'))
+  with patch.dict(os.environ,{'GEMINI_API_KEY':'test'}), patch.object(chat.urllib.request,'urlopen',side_effect=error):
+   with self.assertRaises(chat.ChatError) as raised:chat.remote('/embeddings',{}, {'provider':'gemini'})
+   self.assertIn('no paid fallback',str(raised.exception));self.assertNotIn('private-key',str(raised.exception))

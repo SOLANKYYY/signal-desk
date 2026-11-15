@@ -130,3 +130,24 @@ The final PDF should include your name/USN/class, the **verified private reposit
 - OpenAI embeddings: https://developers.openai.com/api/reference/resources/embeddings/methods/create
 - Ollama API: https://docs.ollama.com/api
 - MongoDB Vector Search: https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
+
+## Online Gemini free-tier deployment
+
+Signal Desk supports the Gemini Developer API directly from Vercel, with no local model server. Create a key at https://aistudio.google.com/apikey using a project on the free API tier, with billing disabled. Do not commit or share the key. Consumer Gemini subscriptions and API project quotas should be checked separately; a subscription is not a guarantee of unlimited API requests.
+
+Set production environment variables and redeploy:
+
+```text
+LLM_BACKEND=gemini
+GEMINI_API_KEY=<save privately in Vercel as a Secret>
+GEMINI_MODEL=gemini-2.5-flash-lite
+EMBEDDING_MODEL=gemini-embedding-001
+EMBEDDING_DIMENSIONS=3072
+CHAT_RETRIEVAL=exact
+```
+
+The server uses Google's OpenAI-compatible embeddings and streaming chat endpoints. Credentials stay server-side. No automatic paid fallback exists. Free quotas may prevent requests until reset. Free-tier input/output may be used to improve Google products; use public threat reports only. Pricing and availability: https://ai.google.dev/gemini-api/docs/pricing .
+
+Re-import events after changing embedding providers; vectors are isolated by provider, model and dimension. For Atlas search, the vector index must use 3072 dimensions for this model instead of the supplied 1536-dimension OpenAI example. Existing source records are not deleted.
+
+Verification: connect the key, embed one event, confirm indexed chunks, ask with both filters All, inspect citations, ask a follow-up and reload to check history. Configuration and mocked tests alone do not prove live model access.
