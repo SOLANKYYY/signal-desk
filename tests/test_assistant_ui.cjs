@@ -5,6 +5,7 @@ async function run(configured){
  vm.createContext(ctx);vm.runInContext(fs.readFileSync('frontend/coursework.js','utf8'),ctx);vm.runInContext(fs.readFileSync('frontend/assistant.js','utf8'),ctx);
  await ctx.window.renderAssistant(x=>html=x,()=>true);
  assert.ok(html.includes('Evidence first. Answers second.'));assert.ok(html.includes('&lt;unsafe&gt;'));assert.ok(element('chat-form').onsubmit);assert.ok(element('chat-thread').innerHTML.includes('Start with a question'));
+ assert.ok(!html.includes('View setup instructions'));assert.ok(!html.includes('final-assessment checklist'));assert.ok(!html.includes('GEMINI_API_KEY'));
  if(!configured)assert.ok(html.includes('disabled'));
 }
 (async()=>{await run(true);await run(false);console.log('Assistant UI: configured and unconfigured states passed');})().catch(e=>{console.error(e);process.exit(1);});
