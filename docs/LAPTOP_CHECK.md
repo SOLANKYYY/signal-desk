@@ -11,6 +11,12 @@ This feature explains a small, user-uploaded Windows security snapshot in the ex
 
 The script reads Defender protection status, signature/scan age, Defender active/history counts, configured firewall profile states, last visible hotfix date, Secure Boot, system-drive BitLocker protection and the Remote Desktop setting. It writes one local JSON file and makes no network requests or setting changes. It excludes device identity, usernames, IPs, file paths/contents, detection resource paths, passwords and recovery keys.
 
+The expanded collector also records versions for selected installed software: Oracle Java 8, TeamViewer, Chrome, Edge, Git, NVIDIA graphics drivers and HP Connection Optimizer. It prefers file-version evidence for Java and the TeamViewer service, falling back to registry version evidence. File paths are never uploaded. This is a limited registry-based inventory, not a full scanner of portable/Store apps, browser extensions or system libraries.
+
+The server currently checks a reviewed three-CVE catalog: Oracle Java 8u251 (CVE-2020-14556) and TeamViewer Windows Full Client/Host (CVE-2024-7479 and CVE-2024-7481, with fixed-version thresholds for branches 11–15). Counts are unique CVEs and affected products, separate from Defender detections. Unmatched software is not certified safe. Version matches do not establish exploitability in the user's configuration or evidence of ongoing compromise. The catalog does not claim coverage of all advisories or Windows CVEs.
+
+Catalog references: [Oracle July 2020 CPU](https://www.oracle.com/security-alerts/cpujul2020.html) and [TeamViewer TV-2024-1006](https://www.teamviewer.com/en-us/resources/trust-center/security-bulletins/tv-2024-1006/). Reviewed 19 November 2026. Update to currently supported releases, not merely these historical minimum fixes.
+
 ## Interpretation
 
 - An active Defender record is reported as a Defender detection needing review; it does not identify a live attacker.

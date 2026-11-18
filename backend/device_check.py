@@ -28,6 +28,13 @@ def analyze(report,now=None):
     if generated>now+timedelta(minutes=10):raise ReportError('Report timestamp is in the future. Correct the laptop clock and generate a new report.')
     checks=report.get('checks')
     if not isinstance(checks,dict):raise ReportError('Report checks are missing.')
+    from .software_check import review
+    try:software=review(report.get('software'))
+    except ValueError as exc:raise ReportError(str(exc)) from None
+    if software['available']:
+        software_time=date(report['software'].get('collected_at',report['generated_at']),'Software collection time')
+        if software_time>now+timedelta(minutes=10):raise ReportError('Software collection timestamp is in the future.')
+        software['collected_at']=software_time.isoformat()
     clean={};findings=[];unknown=[]
     for name,fields in FIELDS.items():
         row=checks.get(name,{'available':False})
@@ -48,6 +55,9 @@ def analyze(report,now=None):
             clean[name][key]=value
     def val(group,key):return clean[group].get(key) if clean[group]['available'] else None
     def add(level,title,basis,next_step):findings.append({'level':level,'title':title,'evidence':basis,'next_step':next_step})
+    for match in software['matches']:
+        add('vulnerability',match['product']+' '+match['version']+' — vendor-advisory match',', '.join(match['cves'])+'. '+match['basis'],match['action'])
+        findings[-1]['source_url']=match['source_url']
     stale=now-generated>timedelta(days=7)
     if stale:add('review','Old snapshot','Report is over seven days old.','Generate a fresh report before assessing the current laptop.')
     active=val('threats','active_count');history=val('threats','history_count')
@@ -70,7 +80,8 @@ def analyze(report,now=None):
     if unknown:add('unknown','Some checks were unavailable',', '.join(unknown),'Unavailable is not a pass. Some commands require administrator access or supported Windows features; review these settings manually.')
     verdict='Defender-reported active detections require review.' if active else 'No active Defender detections were reported in this snapshot.' if active==0 else 'Active threat status could not be checked.'
     if stale:verdict='Historical snapshot only. '+verdict
-    return {'schema':SCHEMA,'generated_at':generated.isoformat(),'verdict':verdict,'findings':findings,'checks':clean,'limitations':'Self-reported, editable point-in-time snapshot. Cannot confirm or rule out an ongoing attack, identify all vulnerabilities, scan attached files, or replace antivirus/incident response. No file contents, addresses or device identity are needed.'}
+    counts={'matched_cves':len({cve for m in software['matches'] for cve in m['cves']}),'affected_products':len({m['product'] for m in software['matches']}),'active_defender_detections':active,'historical_defender_records':history,'unknown_check_fields':len(unknown),'configuration_review_items':sum(f['level'] in ('attention','review') and f['title']!='Old snapshot' for f in findings)}
+    return {'schema':SCHEMA,'generated_at':generated.isoformat(),'verdict':verdict,'counts':counts,'findings':findings,'checks':clean,'software':software,'limitations':'Self-reported, editable point-in-time snapshot. Vulnerable software and Defender detections are different counts. Cannot confirm or rule out an ongoing attack, identify all vulnerabilities, scan attached files, or replace antivirus/incident response. No file contents, addresses or device identity are needed.'}
 
 def source(assessment):
     return {'title':'Uploaded laptop security snapshot','url':'','platform':'windows','stage':'unassessed','kind':'device_check','score':None,'text':json.dumps(assessment,ensure_ascii=True),'assessment':'Local checks supplied by the user; not independently verified.'}

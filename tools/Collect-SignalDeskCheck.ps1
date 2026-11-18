@@ -56,7 +56,36 @@ try {
     $v = Get-ItemProperty -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections
     $checks.remote_desktop = @{ available=$true; enabled=([int]$v.fDenyTSConnections -eq 0) }
 } catch { $checks.remote_desktop = @{ available=$false } }
-$report = [ordered]@{ schema='signal-desk-device-check/v1'; generated_at=[DateTime]::UtcNow.ToString('o'); checks=$checks }
+# Inventory selected software families; no installation paths or personal names
+# are written to the report. This is not a complete application/CVE inventory.
+$softwareItems = @()
+try {
+    $locations = @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*','HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*','HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*')
+    $installed = @(Get-ItemProperty -Path $locations -ErrorAction SilentlyContinue)
+    foreach ($app in $installed) {
+        $product = $null; $candidates = @()
+        switch -Regex ($app.DisplayName) {
+            '^Java 8 Update \d+' { if ($app.Publisher -like '*Oracle*') { $product='oracle_java_8'; if ($app.InstallLocation) { $candidates=@((Join-Path $app.InstallLocation 'bin\java.exe')) } } }
+            '^TeamViewer( Host)?$' { $product='teamviewer'; $candidates=@('C:\Program Files\TeamViewer\TeamViewer_Service.exe','C:\Program Files (x86)\TeamViewer\TeamViewer_Service.exe') }
+            '^Google Chrome$' { $product='chrome' }
+            '^Microsoft Edge$' { $product='edge' }
+            '^Git$' { $product='git' }
+            '^NVIDIA Graphics Driver ' { $product='nvidia_driver' }
+            '^HP Connection Optimizer$' { $product='hp_connection_optimizer' }
+        }
+        if (-not $product -or [string]$app.DisplayVersion -notmatch '^\d{1,6}(\.\d{1,6}){1,3}$') { continue }
+        $version=[string]$app.DisplayVersion; $evidence='registry'
+        foreach ($candidate in $candidates) {
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                $fileVersion=(Get-Item -LiteralPath $candidate).VersionInfo.FileVersion
+                if ($fileVersion -match '^\d{1,6}(\.\d{1,6}){1,3}$') { $version=$fileVersion; $evidence='file_version'; break }
+            }
+        }
+        $softwareItems += @{ product=$product; version=$version; evidence=$evidence }
+    }
+    $software=@{ available=$true; collected_at=[DateTime]::UtcNow.ToString('o'); items=@($softwareItems | Sort-Object { $_.product },{ $_.version } -Unique) }
+} catch { $software=@{ available=$false; items=@() } }
+$report = [ordered]@{ schema='signal-desk-device-check/v1'; generated_at=[DateTime]::UtcNow.ToString('o'); checks=$checks; software=$software }
 if (Test-Path -LiteralPath $OutputPath) { throw 'Output already exists. Choose a new -OutputPath to preserve it.' }
 $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
 Write-Host "Saved security snapshot to: $OutputPath"
