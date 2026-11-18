@@ -235,8 +235,23 @@ def chat_stream(db,owner,body):
         except DuplicateKeyError:pass
         locked=db.chat_locks.find_one_and_update({'_id':lock_id,'until':{'$lte':now()}},{'$set':{'until':now()+timedelta(minutes=5),'token':lock_token}}) is not None
         if not locked:raise ChatError('A response is already running in this conversation.',409)
+        prior=history(db,owner,sid)
         source_url=body.get('source_url','')
         if not isinstance(source_url,str):raise ChatError('Website link must be text.')
+        device=body.get('device_report')
+        device_sources=[]
+        if device is not None:
+            if body.get('device_consent') is not True:raise ChatError('Confirm that you may share this laptop report with the configured AI provider and the shared Signal Desk account.')
+            if source_url.strip():raise ChatError('Send a laptop report or a website link in one message, not both.')
+            if p not in ('all','windows') or s not in ('all','unassessed'):raise ChatError('For a laptop report, select Windows or All platforms and All or Unassessed stages.')
+            from .device_check import analyze,source,ReportError
+            try:device_sources=[source(analyze(device))]
+            except ReportError as exc:raise ChatError(str(exc)) from None
+        elif not source_url.strip() and p in ('all','windows') and s in ('all','unassessed'):
+            # Keep device evidence inside this conversation, never the shared vector library.
+            for turn in reversed(prior):
+                device_sources=[x for x in turn.get('sources',[]) if x.get('kind')=='device_check']
+                if device_sources:break
         if source_url.strip():
             from .public_page import read_page, PageError
             limit(db,owner,'website',5)
@@ -244,11 +259,12 @@ def chat_stream(db,owner,body):
             except PageError as exc:raise ChatError(str(exc)) from None
             ingest(db,owner,{'documents':[document]})
             source_url=document['url']
-        sources=retrieve(db,question,p,s,c,source_url=source_url or None)
+        sources=device_sources or retrieve(db,question,p,s,c,source_url=source_url or None)
         yield {'type':'sources','sources':sources,'retrieval':c['retrieval'],'model':c['model']}
         if not sources and (source_url or p!='all' or s!='all'):raise ChatError('No evidence matches this link or these filters. Select All platforms / All stages or add a relevant excerpt.',409)
         messages=[{'role':'system','content':SYSTEM}]
-        for turn in history(db,owner,sid):messages.extend([{'role':'user','content':turn['question']},{'role':'assistant','content':turn['answer']}])
+        if device_sources:messages.append({'role':'system','content':'The uploaded laptop snapshot is user-supplied evidence, not a live scan. Explain the supplied rule-based verdict and findings in plain language; do not override their uncertainty. Cite the snapshot as [1]. Distinguish Defender-reported active detections, historical detections, configuration weaknesses and unavailable checks. Never conclude an ongoing attack or a clean device from this snapshot. Do not invent CVEs, scan results or malware names. A disabled Defender can mean another antivirus is installed. Report age matters. Do not repeat personal details from prior conversation. Suggest Windows Security/Windows Update checks; do not suggest running uploaded scripts or disabling protection.'})
+        for turn in prior:messages.extend([{'role':'user','content':turn['question']},{'role':'assistant','content':turn['answer']}])
         evidence=[{'citation':i+1,**d} for i,d in enumerate(sources)]
         messages.append({'role':'user','content':json.dumps({'question':question,'platform_filter':p,'stage_filter':s,'untrusted_evidence':evidence},default=str)})
         for event in model_stream(messages,c):

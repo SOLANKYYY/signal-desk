@@ -39,7 +39,7 @@ def authorize():
     if request.method=='POST':
         origin=request.headers.get('Origin')
         if (origin and urlparse(origin).netloc!=request.host) or request.headers.get('Sec-Fetch-Site')=='cross-site':return respond({'error':'Cross-origin write blocked'},403)
-        limit=1024*1024 if request.path in ('/api/replica-lab/import','/api/exercise9/import','/api/coursework/import','/api/assistant/ingest') else 10000
+        limit=1024*1024 if request.path in ('/api/replica-lab/import','/api/exercise9/import','/api/coursework/import','/api/assistant/ingest') else 98304 if request.path=='/api/assistant/chat' else 10000
         if request.content_length is not None and request.content_length>limit:return respond({'error':'Request too large'},413)
     if request.path=='/login':return
     auth=request.authorization
@@ -74,6 +74,8 @@ class Bridge(Handler):
 @app.route('/',methods=['GET'])
 @app.route('/<path:path>',methods=['GET','POST'])
 def route(path=''):
+    if request.method=='GET' and path=='api/assistant/device-script':
+        return Response((ROOT/'tools/Collect-SignalDeskCheck.ps1').read_bytes(),mimetype='text/plain',headers={'Content-Disposition':'attachment; filename=Collect-SignalDeskCheck.ps1','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
     if request.method=='GET' and path in ('','laboratory','intel.js','intel.css','dashboard.css','coursework.js','assistant.js','app.js','styles.css','replica-lab.js','exercise9.js'):
         name=('intel.html' if not path else 'index.html' if path=='laboratory' else path);mime='text/html' if path in ('','laboratory') else 'application/javascript' if path.endswith('.js') else 'text/css'
         return Response((ROOT/'frontend'/name).read_bytes(),mimetype=mime,headers={'Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'",'X-Content-Type-Options':'nosniff'})

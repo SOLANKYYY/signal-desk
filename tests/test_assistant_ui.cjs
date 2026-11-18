@@ -6,6 +6,14 @@ async function run(configured){
  await ctx.window.renderAssistant(x=>html=x,()=>true);
  assert.ok(html.includes('How can I help you?'));assert.ok(html.includes('&lt;unsafe&gt;'));assert.ok(element('chat-form').onsubmit);assert.ok(element('chat-thread').innerHTML.includes('Start with a question'));
  assert.ok(html.indexOf('How can I help you?')<html.indexOf('Evidence library'));assert.ok(html.includes('chat-file'));assert.ok(html.includes('chat-feed-next'));
+ assert.ok(html.includes('/api/assistant/device-script'));assert.ok(html.includes('device-consent'));assert.ok(html.includes('shared account'));
+ await element('device-file').onchange({target:{files:[{name:'program.exe',size:10}]}});
+ assert.ok(element('device-file-status').textContent.includes('generated JSON'));
+ await element('device-file').onchange({target:{files:[{name:'check.json',size:100,text:async()=>JSON.stringify({schema:'signal-desk-device-check/v1',checks:{},generated_at:'2026-11-18T00:00:00Z'})}]}});
+ assert.equal(element('chat-platform').value,'windows');assert.ok(element('device-preview').textContent.includes('signal-desk-device-check/v1'));
+ await element('chat-form').onsubmit({preventDefault(){}});
+ assert.ok(element('chat-notice').textContent.includes('Confirm permission'));
+ element('device-remove').onclick();assert.equal(element('device-preview').textContent,'');assert.equal(element('device-consent').checked,false);
  assert.ok(!html.includes('View setup instructions'));assert.ok(!html.includes('final-assessment checklist'));assert.ok(!html.includes('GEMINI_API_KEY'));
  if(!configured)assert.ok(html.includes('disabled'));
 }
