@@ -45,7 +45,11 @@ try {
     $checks.secure_boot = @{ available=$true; enabled=[bool]$secure }
 } catch { $checks.secure_boot = @{ available=$false } }
 try {
-    $volume = Get-BitLockerVolume -MountPoint $env:SystemDrive
+    $bitErrors = @()
+    $volume = Get-BitLockerVolume -MountPoint $env:SystemDrive -ErrorAction Stop -ErrorVariable bitErrors 2>$null
+    if ($bitErrors.Count -gt 0 -or $null -eq $volume -or $null -eq $volume.ProtectionStatus -or [int]$volume.ProtectionStatus -notin @(0,1)) {
+        throw 'BitLocker status unavailable.'
+    }
     $checks.disk_encryption = @{ available=$true; enabled=([int]$volume.ProtectionStatus -eq 1) }
 } catch { $checks.disk_encryption = @{ available=$false } }
 try {
@@ -56,5 +60,6 @@ $report = [ordered]@{ schema='signal-desk-device-check/v1'; generated_at=[DateTi
 if (Test-Path -LiteralPath $OutputPath) { throw 'Output already exists. Choose a new -OutputPath to preserve it.' }
 $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
 Write-Host "Saved security snapshot to: $OutputPath"
+if (-not $checks.disk_encryption.available) { Write-Host 'BitLocker status unavailable (permissions or Windows support). It will be reported as unknown.' }
 Write-Host 'Review the JSON, then attach it in Signal Desk > Ask Signal Desk > Check my laptop.'
 Write-Host 'No data was uploaded. This snapshot cannot prove whether an attack is happening.'

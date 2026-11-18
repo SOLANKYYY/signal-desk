@@ -19,5 +19,17 @@ try {
     $refused=$false
     try { & (Join-Path $PSScriptRoot '..\tools\Collect-SignalDeskCheck.ps1') -OutputPath $out } catch { $refused=$true }
     if (-not $refused) { throw 'Collector overwrote an existing report' }
+    foreach ($mode in @('denied','empty','unknown')) {
+        Remove-Item -LiteralPath $out
+        function Get-BitLockerVolume {
+            [CmdletBinding()]param([string]$MountPoint)
+            if ($mode -eq 'denied') { Write-Error 'Access denied fixture'; return }
+            if ($mode -eq 'empty') { return $null }
+            return [pscustomobject]@{ProtectionStatus=2}
+        }
+        & (Join-Path $PSScriptRoot '..\tools\Collect-SignalDeskCheck.ps1') -OutputPath $out
+        $r = Get-Content -LiteralPath $out -Raw | ConvertFrom-Json
+        if ($r.checks.disk_encryption.available -ne $false -or $null -ne $r.checks.disk_encryption.enabled) { throw "Unavailable BitLocker was treated as a known state: $mode" }
+    }
     Write-Host 'Collector fixture tests passed; actual device settings were not read.'
 } finally { if (Test-Path -LiteralPath $out) { Remove-Item -LiteralPath $out } }
