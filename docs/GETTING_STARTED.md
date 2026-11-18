@@ -26,7 +26,9 @@ CHAT_RETRIEVAL=exact
 
 Also configure `MONGODB_URI`, `MONGODB_DB`, `APP_USERNAME`, `APP_PASSWORD` (16+ characters), and `CRON_SECRET` (32+ characters). Redeploy after changing variables. API credentials are separate from consumer chat subscriptions. Verify model availability and quotas in the provider console; no paid fallback is automatic.
 
-Open AI Chatbot → Evidence library. Import one public feed report or paste a full advisory excerpt, then ask a question with both filters on All. Feed summaries contain metadata, not the full publisher article. The supplied source URL is recorded rather than fetched by chat ingestion.
+The first screen after sign-in is AI Chatbot. Ask a question in everyday language with both filters on All. When no matching evidence exists, the model can provide clearly labelled general guidance. Add a public HTTPS URL in the optional website field to fetch, save and explain that page with citations. Private addresses, credentials, nonstandard ports, oversized responses and non-text content are rejected. The Evidence library below the chat also accepts pasted excerpts and feed summaries; its manual source URL is recorded rather than fetched. Feed summaries contain metadata, not the full publisher article.
+
+Atlas Vector Search users must include the `url` filter field from `appendix-a/vector-index.json` for questions scoped to a website. Keep vector dimensions matched to the configured provider.
 
 ## Optional providers
 

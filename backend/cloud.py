@@ -10,6 +10,9 @@ from .alerts import processor
 TOPIC='signal-desk-tasks'
 
 def publish(payload,key):
+    if os.getenv('SIGNAL_DESK_LOCAL_QUEUE')=='1':
+        db.local_queue.update_one({'_id':key},{'$setOnInsert':{'payload':payload,'status':'pending','createdAt':now(),'attempts':0}},upsert=True)
+        return None
     from vercel.queue.sync import send
     from vercel.queue import DuplicateIdempotencyKeyError
     try:return send(TOPIC,payload,idempotency_key=key,retention=timedelta(days=7))
